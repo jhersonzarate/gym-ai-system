@@ -5,11 +5,11 @@ import Sidebar from './Sidebar'
 
 export default function Layout() {
   return (
-    <div className="flex h-screen bg-[#0a0a0a] overflow-hidden">
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--gym-black)' }}>
       <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main style={{ flex: 1, overflowY: 'auto', padding: '28px 32px', background: 'var(--gym-black)' }}>
           <Outlet />
         </main>
       </div>

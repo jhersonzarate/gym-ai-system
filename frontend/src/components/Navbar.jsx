@@ -1,10 +1,10 @@
 // frontend/src/components/Navbar.jsx
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Dumbbell } from 'lucide-react'
 
 export default function Navbar() {
   const navigate = useNavigate()
-  const nombre = localStorage.getItem('gym_nombre') || 'Usuario'
+  const nombre = localStorage.getItem('gym_nombre') || 'Atleta'
+  const initial = nombre.charAt(0).toUpperCase()
 
   const logout = () => {
     localStorage.clear()
@@ -12,18 +12,72 @@ export default function Navbar() {
   }
 
   return (
-    <header className="h-14 bg-[#111] border-b border-[#1f1f1f] flex items-center justify-between px-6">
-      <div className="flex items-center gap-2">
-        <Dumbbell className="text-green-500" size={20} />
-        <span className="font-semibold text-white tracking-wide">GymExpert AI</span>
+    <header style={{
+      height: '60px',
+      background: 'var(--gym-card)',
+      borderBottom: '1px solid var(--gym-border)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingInline: '28px',
+      flexShrink: 0,
+    }}>
+      {/* Breadcrumb / titulo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{
+          width: '6px', height: '6px',
+          background: 'var(--gym-lime)',
+          borderRadius: '50%',
+        }} />
+        <span style={{ fontSize: '13px', color: 'var(--gym-muted)', fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>
+          GymExpert AI
+        </span>
       </div>
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-400">Hola, <span className="text-green-400">{nombre}</span></span>
+
+      {/* Usuario */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '34px', height: '34px',
+            background: 'rgba(198,241,53,0.12)',
+            border: '1px solid rgba(198,241,53,0.25)',
+            borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontWeight: 700,
+            fontSize: '15px',
+            color: 'var(--gym-lime)',
+          }}>
+            {initial}
+          </div>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gym-text)', lineHeight: 1.2 }}>{nombre}</div>
+            <div style={{ fontSize: '11px', color: 'var(--gym-muted)', letterSpacing: '0.04em' }}>Atleta</div>
+          </div>
+        </div>
+
+        <div style={{ width: '1px', height: '24px', background: 'var(--gym-border)' }} />
+
         <button
           onClick={logout}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-red-400 transition-colors"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--gym-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '13px',
+            transition: 'color 0.2s',
+            padding: '6px',
+            borderRadius: '6px',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--gym-muted)'}
         >
-          <LogOut size={16} /> Salir
+          <span className="material-icons-round" style={{ fontSize: '18px' }}>logout</span>
+          Salir
         </button>
       </div>
     </header>
