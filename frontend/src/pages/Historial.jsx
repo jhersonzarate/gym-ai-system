@@ -1,5 +1,5 @@
 // frontend/src/pages/Historial.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { gymAPI } from '../services/api'
 
@@ -31,17 +31,19 @@ export default function Historial() {
   const [error,    setError]    = useState('')
   const [deleting, setDeleting] = useState(null)   // id del item que se está borrando
 
-  const cargarHistorial = () => {
+  // ✅ ARREGLO 2: Mover cargarHistorial fuera del useEffect para evitar redeclaración infinita
+  const cargarHistorial = useCallback(() => {
     setLoading(true)
     gymAPI.getHistory()
       .then(({ data }) => setItems(data.historial || []))
       .catch(() => setError('No se pudo cargar el historial. Verifica tu conexión.'))
       .finally(() => setLoading(false))
-  }
+  }, [])
 
+  // ✅ ARREGLO 2: Usar useCallback para que cargarHistorial se ejecute una sola vez
   useEffect(() => {
     cargarHistorial()
-  }, [])
+  }, [cargarHistorial])
 
   // Cargar un plan del historial como resultado activo → ir a Resultados
   const verPlanCompleto = (item) => {
@@ -66,10 +68,21 @@ export default function Historial() {
       ],
     }
 
+    // ✅ ARREGLO 3: Garantizar que TODOS los datos de nutrición se persistan correctamente
     const resultado = {
       id:        item.id,   // ← incluir id para verificación en Resultados.jsx
-      perfil,
-      nutricion:  macros,
+      perfil: {
+        ...perfil,
+        bmr:  perfil?.bmr || macros?.bmr,      // Asegurar BMR
+        tdee: perfil?.tdee || macros?.tdee,    // Asegurar TDEE
+      },
+      nutricion:  {
+        ...macros,
+        calorias_objetivo:  macros?.calorias_objetivo,
+        proteinas_g:        macros?.proteinas_g,
+        carbohidratos_g:    macros?.carbohidratos_g,
+        grasas_g:           macros?.grasas_g,
+      },
       ia_decision,
       rutina,
       progreso_simulado: generarProgreso(perfil?.objetivo),
