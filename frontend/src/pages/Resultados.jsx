@@ -133,10 +133,12 @@ export default function Resultados() {
           // Si no se puede verificar (offline/error), mostrar igual
           setData(localData)
         })
+        // ✅ ARREGLO 1: setChecking(false) ahora se ejecuta DENTRO de .finally()
         .finally(() => setChecking(false))
     } else {
       // Plan sin id (legado o desde historial) — mostrar normalmente
       setData(localData)
+      // ✅ ARREGLO 1: Movido dentro de la rama else para evitar setState duplicado
       setChecking(false)
     }
   }, [])
