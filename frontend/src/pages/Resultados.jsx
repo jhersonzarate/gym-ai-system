@@ -1,5 +1,5 @@
 // frontend/src/pages/Resultados.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExplicacionCard from '../components/ExplicacionCard'
 import ProgressChart   from '../components/ProgressChart'
@@ -97,49 +97,82 @@ export default function Resultados() {
   const [openDia,  setOpenDia] = useState(0)
   const [checking, setChecking] = useState(true)
   const [data,     setData]    = useState(null)
+  
+  // ✅ ARREGLO: useRef para rastrear si el componente está montado
+  const isMountedRef = useRef(true)
 
   // ── Verificar validez del plan al montar ──────────────────────────────────
   // Si el historial del backend está vacío, el plan local no es válido.
   useEffect(() => {
-    const raw = localStorage.getItem('gym_resultado')
-    if (!raw) {
-      setChecking(false)
-      return
-    }
+    let didCleanup = false
 
-    let localData = null
-    try {
-      localData = JSON.parse(raw)
-    } catch {
-      localStorage.removeItem('gym_resultado')
-      setChecking(false)
-      return
-    }
+    // ✅ ARREGLO: Envolver la lógica en una función que ejecuta después del effect
+    const verifyPlan = async () => {
+      const raw = localStorage.getItem('gym_resultado')
+      if (!raw) {
+        if (!didCleanup && isMountedRef.current) {
+          setChecking(false)
+        }
+        return
+      }
 
-    // Si el resultado tiene un `id`, verificar que ese registro exista en la DB
-    if (localData?.id) {
-      gymAPI.getHistory()
-        .then(({ data: histData }) => {
+      let localData = null
+      try {
+        localData = JSON.parse(raw)
+      } catch {
+        localStorage.removeItem('gym_resultado')
+        if (!didCleanup && isMountedRef.current) {
+          setChecking(false)
+        }
+        return
+      }
+
+      // Si el resultado tiene un `id`, verificar que ese registro exista en la DB
+      if (localData?.id) {
+        try {
+          const { data: histData } = await gymAPI.getHistory()
           const ids = (histData.historial || []).map(h => h.id)
           if (!ids.includes(localData.id)) {
             // El plan ya no existe en DB — limpiar localStorage
             localStorage.removeItem('gym_resultado')
-            setData(null)
+            if (!didCleanup && isMountedRef.current) {
+              setData(null)
+            }
           } else {
+            if (!didCleanup && isMountedRef.current) {
+              setData(localData)
+            }
+          }
+        } catch {
+          // Si no se puede verificar (offline/error), mostrar igual
+          if (!didCleanup && isMountedRef.current) {
             setData(localData)
           }
-        })
-        .catch(() => {
-          // Si no se puede verificar (offline/error), mostrar igual
+        } finally {
+          if (!didCleanup && isMountedRef.current) {
+            setChecking(false)
+          }
+        }
+      } else {
+        // Plan sin id (legado o desde historial) — mostrar normalmente
+        if (!didCleanup && isMountedRef.current) {
           setData(localData)
-        })
-        // ✅ ARREGLO 1: setChecking(false) ahora se ejecuta DENTRO de .finally()
-        .finally(() => setChecking(false))
-    } else {
-      // Plan sin id (legado o desde historial) — mostrar normalmente
-      setData(localData)
-      // ✅ ARREGLO 1: Movido dentro de la rama else para evitar setState duplicado
-      setChecking(false)
+          setChecking(false)
+        }
+      }
+    }
+
+    verifyPlan()
+
+    return () => {
+      didCleanup = true
+    }
+  }, [])
+
+  // Cleanup al desmontar
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
     }
   }, [])
 
