@@ -708,3 +708,5 @@ INFO: Unsupported notification method: $/setTrace
 2026.05.06 17:52:17 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
 2026.05.06 17:52:21 WARN  no build tool detected in workspace 'C:\Users\Jherson Silva\gym-ai-system'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 
 2026.05.06 17:52:21 WARN  Build server is not auto-connectable.
+may 06, 2026 6:01:01 P. M. org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFO: Unsupported notification method: $/setTrace

@@ -1,7 +1,8 @@
 // frontend/src/pages/Historial.jsx
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { gymAPI } from '../services/api'
+
 
 const OBJETIVO_LABEL = {
   perder_grasa:  { l: 'Perder grasa',  color: 'var(--orange)', icon: 'trending_down' },
@@ -23,6 +24,7 @@ const NIVEL_COLOR = {
   avanzado:     '#EF4444',
 }
 
+
 export default function Historial() {
   const navigate = useNavigate()
   const [items,    setItems]    = useState([])
@@ -31,59 +33,45 @@ export default function Historial() {
   const [error,    setError]    = useState('')
   const [deleting, setDeleting] = useState(null)
 
-  const isMountedRef = useRef(true)
 
-  useEffect(() => {
-    let didCleanup = false
-
-    const cargarHistorial = async () => {
-      setLoading(true)
-      try {
-        const { data } = await gymAPI.getHistory()
-        if (!didCleanup && isMountedRef.current) {
-          setItems(data.historial || [])
-          setError('')
-        }
-      } catch {
-        if (!didCleanup && isMountedRef.current) {
-          setError('No se pudo cargar el historial. Verifica tu conexión.')
-        }
-      } finally {
-        if (!didCleanup && isMountedRef.current) {
-          setLoading(false)
-        }
-      }
+  const cargarHistorial = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const { data } = await gymAPI.getHistory()
+      setItems(data.historial || [])
+    } catch {
+      setError('No se pudo cargar el historial. Verifica tu conexión.')
+    } finally {
+      // ✅ FIX: siempre se ejecuta, sin chequear refs
+      setLoading(false)
     }
-
-    cargarHistorial()
-    return () => { didCleanup = true }
-  }, [])
+  }
 
   useEffect(() => {
-    return () => { isMountedRef.current = false }
-  }, [])
+  const init = async () => {
+    await cargarHistorial()
+  }
+  init()
+}, [])
+
 
   const verPlanCompleto = (item) => {
-    // ✅ FIX: parsear todos los campos correctamente
     const perfil     = typeof item.perfil      === 'string' ? JSON.parse(item.perfil)      : item.perfil      || {}
     const rutina     = typeof item.rutina      === 'string' ? JSON.parse(item.rutina)      : item.rutina      || {}
     const macros     = typeof item.macros      === 'string' ? JSON.parse(item.macros)      : item.macros      || {}
     const ia_raw     = typeof item.ia_decision === 'string' ? JSON.parse(item.ia_decision) : item.ia_decision || null
 
-    // ✅ FIX PRINCIPAL: bmr y tdee viven en perfil_json (guardado por routes.py en generate-routine)
-    // routes.py guarda en perfil_json el dict perfil_dict que incluye imc, imc_categoria, somatotipo
-    // pero NO incluye bmr ni tdee porque esos se calculan por separado y solo se retornan en el response.
-    // Sin embargo, calcular_bmr y calcular_tdee son deterministas, así que los recalculamos aquí.
     const bmr  = perfil.bmr  ?? calcularBMR(perfil.peso, perfil.altura, perfil.edad, perfil.sexo)
     const tdee = perfil.tdee ?? calcularTDEE(bmr, perfil.dias_disponibles)
 
     const ia_decision = ia_raw || {
-      tipo_rutina:  rutina?.tipo_rutina,
-      frecuencia:   perfil?.dias_disponibles,
-      intensidad:   perfil?.nivel === 'principiante' ? 'baja'
-                  : perfil?.nivel === 'intermedio'   ? 'moderada' : 'alta',
-      usa_cardio:   perfil?.objetivo === 'perder_grasa',
-      objetivo:     perfil?.objetivo,
+      tipo_rutina: rutina?.tipo_rutina,
+      frecuencia:  perfil?.dias_disponibles,
+      intensidad:  perfil?.nivel === 'principiante' ? 'baja'
+                 : perfil?.nivel === 'intermedio'   ? 'moderada' : 'alta',
+      usa_cardio:  perfil?.objetivo === 'perder_grasa',
+      objetivo:    perfil?.objetivo,
       explicacion: [
         `Tu nivel ${perfil?.nivel || '—'} determina la frecuencia y tipo de rutina asignada.`,
         `Tu objetivo de ${(perfil?.objetivo || '').replace(/_/g, ' ')} define la distribución calórica.`,
@@ -94,12 +82,7 @@ export default function Historial() {
 
     const resultado = {
       id: item.id,
-      // ✅ FIX: perfil con bmr y tdee siempre presentes
-      perfil: {
-        ...perfil,
-        bmr,
-        tdee,
-      },
+      perfil: { ...perfil, bmr, tdee },
       nutricion: {
         calorias_objetivo: macros?.calorias_objetivo,
         proteinas_g:       macros?.proteinas_g,
@@ -115,7 +98,7 @@ export default function Historial() {
     navigate('/resultados')
   }
 
-  // ✅ FIX: Recalcular BMR con la misma fórmula de calculos.py (Mifflin-St Jeor)
+
   const calcularBMR = (peso, altura_cm, edad, sexo) => {
     if (!peso || !altura_cm || !edad || !sexo) return null
     if (sexo === 'masculino') {
@@ -125,7 +108,6 @@ export default function Historial() {
     }
   }
 
-  // ✅ FIX: Recalcular TDEE con la misma lógica de calculos.py
   const calcularTDEE = (bmr, dias_activos) => {
     if (!bmr || !dias_activos) return null
     let factor
@@ -148,7 +130,6 @@ export default function Historial() {
       if (localRaw) {
         try {
           const local = JSON.parse(localRaw)
-          // ✅ FIX: comparar como número para evitar mismatch de tipos
           if (Number(local?.id) === Number(itemId)) {
             localStorage.removeItem('gym_resultado')
           }
@@ -174,32 +155,13 @@ export default function Historial() {
       const delta = objetivo === 'perder_grasa'
         ? -factores_grasa[i]
         : objetivo === 'ganar_musculo'
-        ? factores_musculo[i]
-        : 0
+          ? factores_musculo[i]
+          : 0
       acumulado = Math.round((acumulado + delta) * 10) / 10
       return { semana: i + 1, cambio_kg: acumulado }
     })
   }
 
-  const reintentar = async () => {
-    let didCleanup = false
-    setLoading(true)
-    try {
-      const { data } = await gymAPI.getHistory()
-      if (!didCleanup && isMountedRef.current) {
-        setItems(data.historial || [])
-        setError('')
-      }
-    } catch {
-      if (!didCleanup && isMountedRef.current) {
-        setError('No se pudo cargar el historial. Verifica tu conexión.')
-      }
-    } finally {
-      if (!didCleanup && isMountedRef.current) {
-        setLoading(false)
-      }
-    }
-  }
 
   /* ── Estados de carga / error / vacío ── */
   if (loading) return (
@@ -217,7 +179,7 @@ export default function Historial() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: 12 }}>
       <span className="material-icons-round" style={{ fontSize: 40, color: 'var(--red)' }}>error_outline</span>
       <p style={{ color: 'var(--muted)', fontSize: 14 }}>{error}</p>
-      <button onClick={reintentar} className="btn-ghost" style={{ fontSize: 13 }}>
+      <button onClick={cargarHistorial} className="btn-ghost" style={{ fontSize: 13 }}>
         <span className="material-icons-round" style={{ fontSize: 16 }}>refresh</span>
         Reintentar
       </button>
@@ -243,6 +205,7 @@ export default function Historial() {
       </div>
     </div>
   )
+
 
   return (
     <div style={{ maxWidth: '880px', margin: '0 auto' }}>
@@ -406,12 +369,12 @@ export default function Historial() {
                   {/* Datos físicos */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
                     {[
-                      { l: 'Peso',     v: `${perfil?.peso} kg`,           icon: 'monitor_weight' },
-                      { l: 'Altura',   v: `${perfil?.altura} cm`,         icon: 'height'         },
-                      { l: 'Edad',     v: `${perfil?.edad} años`,         icon: 'cake'           },
-                      { l: 'Sexo',     v: perfil?.sexo,                   icon: 'person'         },
-                      { l: 'IMC',      v: perfil?.imc ? String(perfil.imc) : '—', icon: 'analytics' },
-                      { l: 'Días/sem', v: `${perfil?.dias_disponibles}`,  icon: 'calendar_today' },
+                      { l: 'Peso',     v: `${perfil?.peso} kg`,                          icon: 'monitor_weight' },
+                      { l: 'Altura',   v: `${perfil?.altura} cm`,                        icon: 'height'         },
+                      { l: 'Edad',     v: `${perfil?.edad} años`,                        icon: 'cake'           },
+                      { l: 'Sexo',     v: perfil?.sexo,                                  icon: 'person'         },
+                      { l: 'IMC',      v: perfil?.imc ? String(perfil.imc) : '—',        icon: 'analytics'      },
+                      { l: 'Días/sem', v: `${perfil?.dias_disponibles}`,                 icon: 'calendar_today' },
                     ].map(({ l, v, icon }) => (
                       <div key={l} style={{
                         background: 'var(--dark)', borderRadius: 8, padding: '12px 14px',
@@ -435,10 +398,10 @@ export default function Historial() {
                     borderRadius: 10, marginBottom: 16,
                   }}>
                     {[
-                      { l: 'Calorías',      v: macros?.calorias_objetivo,    unit: 'kcal', color: 'var(--lime)'  },
-                      { l: 'Proteínas',     v: `${macros?.proteinas_g}g`,     unit: '',    color: '#60A5FA'      },
-                      { l: 'Carbohidratos', v: `${macros?.carbohidratos_g}g`, unit: '',    color: '#F59E0B'      },
-                      { l: 'Grasas',        v: `${macros?.grasas_g}g`,        unit: '',    color: 'var(--orange)'},
+                      { l: 'Calorías',      v: macros?.calorias_objetivo,    unit: 'kcal', color: 'var(--lime)'   },
+                      { l: 'Proteínas',     v: `${macros?.proteinas_g}g`,     unit: '',    color: '#60A5FA'       },
+                      { l: 'Carbohidratos', v: `${macros?.carbohidratos_g}g`, unit: '',    color: '#F59E0B'       },
+                      { l: 'Grasas',        v: `${macros?.grasas_g}g`,        unit: '',    color: 'var(--orange)' },
                     ].map(({ l, v, unit, color }) => (
                       <div key={l} style={{ textAlign: 'center' }}>
                         <div style={{
