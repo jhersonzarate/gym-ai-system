@@ -1,5 +1,6 @@
 // frontend/src/pages/Historial.jsx
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { gymAPI } from '../services/api'
 
 function EmptyState() {
@@ -281,10 +282,18 @@ function HistorialItem({ item, index, isOpen, onToggle }) {
 }
 
 export default function Historial() {
-  const [items,   setItems]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [open,    setOpen]    = useState(null)
-  const [error,   setError]   = useState('')
+  const navigate = useNavigate()
+  const [items,      setItems]      = useState([])
+  const [savedItems, setSavedItems] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('gym_saved_results') || '[]')
+    } catch {
+      return []
+    }
+  })
+  const [loading,    setLoading]    = useState(true)
+  const [open,       setOpen]       = useState(null)
+  const [error,      setError]      = useState('')
 
   useEffect(() => {
     gymAPI.getHistory()
@@ -292,6 +301,17 @@ export default function Historial() {
       .catch(() => setError('No se pudo cargar el historial. Verifica tu conexión.'))
       .finally(() => setLoading(false))
   }, [])
+
+  const handleViewSaved = (item) => {
+    localStorage.setItem('gym_resultado', JSON.stringify(item.resultado))
+    navigate('/resultados')
+  }
+
+  const handleDeleteSaved = (id) => {
+    const next = savedItems.filter(item => item.id !== id)
+    localStorage.setItem('gym_saved_results', JSON.stringify(next))
+    setSavedItems(next)
+  }
 
   return (
     <div className="animate-fade-up" style={{ maxWidth: '860px', margin: '0 auto' }}>
@@ -303,7 +323,8 @@ export default function Historial() {
             Historial de Planes
           </h1>
           <p style={{ color: 'var(--gym-muted)', fontSize: '13px', marginTop: '4px' }}>
-            Últimos {items.length > 0 ? items.length : '—'} planes generados · guardados automáticamente
+            {items.length > 0 ? `${items.length} planes generados` : 'Sin historial en servidor'}
+            {savedItems.length > 0 ? ` · ${savedItems.length} guardados locales` : ''}
           </p>
         </div>
 
@@ -326,6 +347,72 @@ export default function Historial() {
           </div>
         )}
       </div>
+
+      {savedItems.length > 0 && (
+        <div style={{ marginBottom: '24px', padding: '20px', background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+            <div>
+              <div className="label-tag" style={{ marginBottom: '6px', color: 'var(--gym-lime)' }}>Guardados</div>
+              <h2 className="font-condensed" style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '0.02em' }}>
+                Planes guardados localmente
+              </h2>
+              <p style={{ fontSize: '13px', color: 'var(--gym-muted)', marginTop: '4px' }}>
+                Selecciona un plan para verlo en la pantalla de Resultados.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px' }}>
+            {savedItems.map((item) => {
+              const perfil = item.perfil
+              const objetivo = OBJETIVO_COLORS[perfil?.objetivo] || OBJETIVO_COLORS.mantener
+              const fecha = new Date(item.fecha)
+              const fechaStr = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+              return (
+                <div key={item.id} style={{ background: 'var(--gym-dark)', border: '1px solid var(--gym-border)', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gym-text)' }}>
+                        {OBJETIVO_COLORS[perfil?.objetivo]?.label || 'Plan guardado'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--gym-muted)', marginTop: '5px' }}>
+                        {fechaStr}
+                      </div>
+                    </div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', background: objetivo.bg, borderRadius: '999px', color: objetivo.color, fontSize: '11px', fontWeight: 700 }}>
+                      <span className="material-icons-round" style={{ fontSize: '14px' }}>{objetivo.icon}</span>
+                      {objetivo.label}
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--gym-lime)' }}>
+                    {item.resultado?.nutricion?.calorias_objetivo?.toLocaleString() || '—'} kcal/día
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleViewSaved(item)}
+                      className="btn-ghost"
+                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
+                    >
+                      Ver resultado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSaved(item.id)}
+                      className="btn-ghost"
+                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px', borderColor: 'rgba(239,68,68,0.35)', color: '#F87171' }}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Stats summary bar — solo si hay items */}
       {!loading && items.length > 0 && (() => {
@@ -407,9 +494,14 @@ export default function Historial() {
           <span className="material-icons-round" style={{ fontSize: '20px', color: 'var(--gym-red)' }}>error_outline</span>
           <span style={{ fontSize: '14px', color: '#FCA5A5' }}>{error}</span>
         </div>
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && savedItems.length === 0 ? (
         <div style={{ background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: '12px' }}>
           <EmptyState />
+        </div>
+      ) : items.length === 0 ? (
+        <div style={{ background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gym-text)', marginBottom: '10px' }}>No hay historial en el servidor</div>
+          <div style={{ fontSize: '14px', color: 'var(--gym-muted)' }}>Sin embargo, tienes resultados guardados localmente que puedes abrir desde arriba.</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

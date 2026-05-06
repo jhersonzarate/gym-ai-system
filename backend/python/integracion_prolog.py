@@ -41,8 +41,11 @@ def consultar_prolog(perfil: dict) -> dict:
 
     # Guardar query temporal
     query_file = "/tmp/gym_query.pl"
-    with open(query_file, "w") as f:
-        f.write(query)
+    try:
+        with open(query_file, "w") as f:
+            f.write(query)
+    except:
+        return _resultado_fallback(perfil)
 
     try:
         result = subprocess.run(
@@ -52,11 +55,24 @@ def consultar_prolog(perfil: dict) -> dict:
             timeout=10
         )
         output = result.stdout + result.stderr
-        return _parsear_salida_prolog(output)
+        
+        # Si hay error o no hay salida, usar fallback
+        if result.returncode != 0 or not output.strip():
+            return _resultado_fallback(perfil)
+        
+        parsed = _parsear_salida_prolog(output)
+        
+        # Si no se parsearon explicaciones, usar fallback
+        if not parsed.get("explicacion") or (isinstance(parsed.get("explicacion"), list) and len(parsed["explicacion"]) == 0):
+            return _resultado_fallback(perfil)
+        
+        return parsed
     except subprocess.TimeoutExpired:
         return _resultado_fallback(perfil)
     except FileNotFoundError:
         # SWI-Prolog no instalado, usar fallback
+        return _resultado_fallback(perfil)
+    except Exception:
         return _resultado_fallback(perfil)
 
 def _parsear_salida_prolog(output: str) -> dict:
@@ -68,24 +84,42 @@ def _parsear_salida_prolog(output: str) -> dict:
         "explicacion": []
     }
     
+    explicaciones_found = False
+    
     for linea in output.split("\n"):
         linea = linea.strip()
+        if not linea:
+            continue
+            
         if linea.startswith("FRECUENCIA:"):
             try:
-                resultado["frecuencia"] = int(linea.split(":")[1])
+                resultado["frecuencia"] = int(linea.split(":")[1].strip())
             except:
                 pass
         elif linea.startswith("TIPO:"):
-            resultado["tipo_rutina"] = linea.split(":")[1].strip()
+            tipo = linea.split(":", 1)[1].strip()
+            if tipo:
+                resultado["tipo_rutina"] = tipo
         elif linea.startswith("INTENSIDAD:"):
-            resultado["intensidad"] = linea.split(":")[1].strip()
+            intensidad = linea.split(":", 1)[1].strip()
+            if intensidad:
+                resultado["intensidad"] = intensidad
         elif linea.startswith("CARDIO:"):
-            val = linea.split(":")[1].strip()
-            resultado["usa_cardio"] = val.lower() == "si"
+            val = linea.split(":", 1)[1].strip()
+            resultado["usa_cardio"] = val.lower() in ("si", "true", "yes", "1")
         elif linea.startswith("EXPLICACION:"):
             texto = linea.split(":", 1)[1].strip()
-            resultado["explicacion"] = texto.split("|")
-
+            if texto:
+                # Filtrar explicaciones vacías
+                explicaciones_found = True
+                exps = [e.strip() for e in texto.split("|") if e.strip()]
+                resultado["explicacion"] = exps
+    
+    # Si no se encontraron explicaciones, devolver resultado incompleto 
+    # para que el caller sepa que debe usar fallback
+    if not explicaciones_found:
+        resultado["explicacion"] = []
+    
     return resultado
 
 def _resultado_fallback(perfil: dict) -> dict:
@@ -104,28 +138,63 @@ def _resultado_fallback(perfil: dict) -> dict:
     if nivel == "principiante":
         tipo = "fullbody"
         intensidad = "baja"
-        explicaciones.append("Principiante: rutina full body para adaptación neuromuscular")
+        explicaciones.append("Nivel principiante: se prioriza adaptación neuromuscular y técnica de movimiento")
+        explicaciones.append("Disponibilidad de {0} días — se asignan {1} sesiones semanales".format(dias, frecuencia))
     elif nivel == "intermedio":
         tipo = "upper_lower" if dias >= 4 else "fullbody"
         intensidad = "moderada"
-        explicaciones.append("Intermedio: división upper/lower para mayor volumen")
+        explicaciones.append("Nivel intermedio: el cuerpo puede manejar mayor volumen e intensidad de entrenamiento")
+        explicaciones.append("Disponibilidad de {0} días — se asignan {1} sesiones semanales".format(dias, frecuencia))
     else:
         tipo = "ppl" if dias >= 5 else "upper_lower"
         intensidad = "alta"
-        explicaciones.append("Avanzado: Push/Pull/Legs para máxima especialización")
+        explicaciones.append("Nivel avanzado: se aplica especialización y periodización para romper mesetas")
+        explicaciones.append("Disponibilidad de {0} días — se asignan {1} sesiones semanales".format(dias, frecuencia))
 
     if objetivo == "perder_grasa":
         usa_cardio = True
-        explicaciones.append("Objetivo grasa: cardio incluido para déficit calórico")
+        explicaciones.append("Objetivo perder grasa: se genera déficit calórico combinando ejercicio y nutrición")
     elif objetivo == "ganar_musculo":
         usa_cardio = False
-        explicaciones.append("Objetivo músculo: prioridad en entrenamiento de fuerza")
+        explicaciones.append("Objetivo ganar músculo: superávit calórico moderado con énfasis en sobrecarga progresiva")
+    else:
+        explicaciones.append("Objetivo mantenimiento: equilibrio entre ingesta y gasto energético")
 
-    if imc_cat == "obesidad":
+    if imc_cat == "bajo_peso":
+        explicaciones.append("IMC bajo: se prioriza ganancia de masa muscular y densidad calórica")
+    elif imc_cat == "normal":
+        explicaciones.append("IMC normal: condición física óptima para cualquier objetivo")
+    elif imc_cat == "sobrepeso":
+        explicaciones.append("IMC sobrepeso: se incluye cardio moderado y control calórico")
+    elif imc_cat == "obesidad":
         intensidad = "baja"
         usa_cardio = True
-        explicaciones.append("IMC elevado: intensidad reducida y cardio adaptado")
+        explicaciones.append("IMC obesidad: intensidad reducida para proteger articulaciones y corazón")
 
+    if tipo == "fullbody":
+        explicaciones.append("Rutina Full Body: todos los grupos musculares en cada sesión, ideal para baja frecuencia")
+    elif tipo == "upper_lower":
+        explicaciones.append("Rutina Upper/Lower: división por tren superior e inferior, mayor volumen por grupo")
+    elif tipo == "ppl":
+        explicaciones.append("Rutina Push/Pull/Legs: máxima especialización por patrón de movimiento")
+
+    if intensidad == "baja":
+        explicaciones.append("Intensidad baja: cargas moderadas, técnica perfecta, recuperación prioritaria")
+    elif intensidad == "moderada":
+        explicaciones.append("Intensidad moderada: rango hipertrofia 8-12 reps, esfuerzo controlado")
+    elif intensidad == "alta":
+        explicaciones.append("Intensidad alta: cargas pesadas 5-8 reps, fuerza-hipertrofia combinada")
+
+    if usa_cardio:
+        if objetivo == "perder_grasa":
+            explicaciones.append("Cardio incluido: esencial para ampliar déficit calórico en objetivo de pérdida de grasa")
+        else:
+            explicaciones.append("Cardio incluido: beneficioso para salud metabólica y recuperación")
+    else:
+        if objetivo == "ganar_musculo":
+            explicaciones.append("Cardio omitido: se maximiza superávit calórico para síntesis proteica muscular")
+        else:
+            explicaciones.append("Cardio no prioritario: el enfoque está en fuerza y composición corporal")
     return {
         "frecuencia": frecuencia,
         "tipo_rutina": tipo,

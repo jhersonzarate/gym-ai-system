@@ -138,11 +138,11 @@ export default function Formulario() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
-  // Convertir altura a centímetros: si es < 3, asumimos que son metros; si es >= 3, ya están en cm
+  // Convertir altura a centímetros: solo aceptamos metros (1.0 - 2.3). No se permite enviar valores directos en cm como 168.
   const normalizeHeight = (h) => {
     const num = parseFloat(h)
-    if (!num) return null
-    return num < 3 ? num * 100 : num // Si es menor a 3, multiplicar por 100 (metros a cm)
+    if (Number.isNaN(num) || num <= 0 || num >= 3) return null
+    return num * 100
   }
 
   const heightInCm = normalizeHeight(form.altura)
@@ -157,18 +157,35 @@ export default function Formulario() {
     setLoading(true)
     setError('')
     try {
+      if (!heightInCm) {
+        throw new Error('Ingresa tu altura en metros con punto decimal, por ejemplo 1.68')
+      }
+
       const payload = {
         edad:             parseInt(form.edad),
         peso:             parseFloat(form.peso),
-        altura:           normalizeHeight(form.altura), // Usar altura normalizada en cm
+        altura:           heightInCm, // Usar altura normalizada en cm
         sexo:             form.sexo,
         nivel:            form.nivel,
         objetivo:         form.objetivo,
         dias_disponibles: form.dias_disponibles,
       }
       const { data } = await gymAPI.generateRoutine(payload)
-      sessionStorage.setItem('gym_resultado', JSON.stringify(data))
-      sessionStorage.setItem('gym_perfil_form', JSON.stringify(payload))
+      localStorage.setItem('gym_resultado', JSON.stringify(data))
+      localStorage.setItem('gym_perfil_form', JSON.stringify(payload))
+
+      const saved = JSON.parse(localStorage.getItem('gym_saved_results') || '[]')
+      const nextSaved = [
+        {
+          id: Date.now(),
+          fecha: new Date().toISOString(),
+          perfil: payload,
+          resultado: data,
+        },
+        ...saved,
+      ].slice(0, 12)
+      localStorage.setItem('gym_saved_results', JSON.stringify(nextSaved))
+
       navigate('/resultados')
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al generar el plan. Verifica los datos.')
@@ -264,14 +281,14 @@ export default function Formulario() {
                 </InputField>
 
                 {/* Altura */}
-                <InputField label="Altura" hint="Centímetros: 175 o Metros: 1.75 (el sistema detecta automáticamente)">
+                <InputField label="Altura" hint="Metros: 1.75 (usa punto decimal; 1. y 1.68 son válidos)">
                   <NumericInput
                     value={form.altura}
                     onChange={e => set('altura', e.target.value)}
-                    placeholder="175 o 1.75"
+                    placeholder="1.75"
                     icon="height"
-                    min="1.2" max="2.3" step="0.1"
-                    unit="cm/m"
+                    min="1.0" max="2.3" step="0.01"
+                    unit="m"
                   />
                 </InputField>
               </div>

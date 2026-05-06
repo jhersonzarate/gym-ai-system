@@ -50,17 +50,25 @@ function MacroBar({ label, valor, kcal, pct, color, icon }) {
 export default function Resultados() {
   const navigate = useNavigate()
   const [data] = useState(() => {
-    const raw = sessionStorage.getItem('gym_resultado')
-    if (!raw) return null
-
-    try {
-      const parsed = JSON.parse(raw)
-      return parsed && typeof parsed === 'object' ? parsed : null
-    } catch (err) {
-      console.error('Error parsing gym_resultado:', err)
-      sessionStorage.removeItem('gym_resultado')
-      return null
+    const loadRaw = (key) => {
+      const raw = localStorage.getItem(key) || sessionStorage.getItem(key)
+      if (!raw) return null
+      try {
+        const parsed = JSON.parse(raw)
+        return parsed && typeof parsed === 'object' ? parsed : null
+      } catch (err) {
+        console.error(`Error parsing ${key}:`, err)
+        localStorage.removeItem(key)
+        sessionStorage.removeItem(key)
+        return null
+      }
     }
+
+    const current = loadRaw('gym_resultado')
+    if (current) return current
+
+    const saved = loadRaw('gym_saved_results') || []
+    return saved.length ? saved[0].resultado : null
   })
   const [openDia, setOpenDia] = useState(0)
   const [tab, setTab]     = useState('rutina')
