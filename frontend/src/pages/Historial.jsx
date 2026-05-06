@@ -1,5 +1,5 @@
 // frontend/src/pages/Historial.jsx
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { gymAPI } from '../services/api'
 
@@ -31,19 +31,45 @@ export default function Historial() {
   const [error,    setError]    = useState('')
   const [deleting, setDeleting] = useState(null)   // id del item que se está borrando
 
-  // ✅ ARREGLO 2: Mover cargarHistorial fuera del useEffect para evitar redeclaración infinita
-  const cargarHistorial = useCallback(() => {
-    setLoading(true)
-    gymAPI.getHistory()
-      .then(({ data }) => setItems(data.historial || []))
-      .catch(() => setError('No se pudo cargar el historial. Verifica tu conexión.'))
-      .finally(() => setLoading(false))
+  // ✅ ARREGLO: useRef para rastrear si el componente está montado
+  const isMountedRef = useRef(true)
+
+  // ✅ ARREGLO: Envolver cargarHistorial en una función que se ejecuta con effect
+  useEffect(() => {
+    let didCleanup = false
+
+    const cargarHistorial = async () => {
+      setLoading(true)
+      try {
+        const { data } = await gymAPI.getHistory()
+        if (!didCleanup && isMountedRef.current) {
+          setItems(data.historial || [])
+          setError('')
+        }
+      } catch {
+        if (!didCleanup && isMountedRef.current) {
+          setError('No se pudo cargar el historial. Verifica tu conexión.')
+        }
+      } finally {
+        if (!didCleanup && isMountedRef.current) {
+          setLoading(false)
+        }
+      }
+    }
+
+    cargarHistorial()
+
+    return () => {
+      didCleanup = true
+    }
   }, [])
 
-  // ✅ ARREGLO 2: Usar useCallback para que cargarHistorial se ejecute una sola vez
+  // Cleanup al desmontar
   useEffect(() => {
-    cargarHistorial()
-  }, [cargarHistorial])
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // Cargar un plan del historial como resultado activo → ir a Resultados
   const verPlanCompleto = (item) => {
@@ -140,6 +166,27 @@ export default function Historial() {
     })
   }
 
+  // ✅ ARREGLO: Función para reintentar carga
+  const reintentar = async () => {
+    let didCleanup = false
+    setLoading(true)
+    try {
+      const { data } = await gymAPI.getHistory()
+      if (!didCleanup && isMountedRef.current) {
+        setItems(data.historial || [])
+        setError('')
+      }
+    } catch {
+      if (!didCleanup && isMountedRef.current) {
+        setError('No se pudo cargar el historial. Verifica tu conexión.')
+      }
+    } finally {
+      if (!didCleanup && isMountedRef.current) {
+        setLoading(false)
+      }
+    }
+  }
+
   /* ── Estados de carga / error / vacío ── */
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: 16 }}>
@@ -156,7 +203,7 @@ export default function Historial() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: 12 }}>
       <span className="material-icons-round" style={{ fontSize: 40, color: 'var(--red)' }}>error_outline</span>
       <p style={{ color: 'var(--muted)', fontSize: 14 }}>{error}</p>
-      <button onClick={cargarHistorial} className="btn-ghost" style={{ fontSize: 13 }}>
+      <button onClick={reintentar} className="btn-ghost" style={{ fontSize: 13 }}>
         <span className="material-icons-round" style={{ fontSize: 16 }}>refresh</span>
         Reintentar
       </button>
