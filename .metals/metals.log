@@ -469,3 +469,11 @@ WARNING: Unmatched cancel notification for request id 27
 2026.05.05 18:27:49 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
 2026.05.05 18:27:54 WARN  no build tool detected in workspace 'C:\Users\Jherson Silva\gym-ai-system'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 
 2026.05.05 18:27:54 WARN  Build server is not auto-connectable.
+2026.05.05 19:48:23 INFO  Shutting down server
+2026.05.05 19:48:23 INFO  Memory monitor stopped
+2026.05.05 19:48:23 INFO  shutting down Metals
+2026.05.05 19:48:23 INFO  Exiting server
+2026.05.05 23:38:36 INFO  Started: Metals version 1.6.7 in folders 'C:\Users\Jherson Silva\gym-ai-system' for client Visual Studio Code 1.118.1.
+2026.05.05 23:38:36 INFO  time: initialize in 0.18s
+2026.05.05 23:38:36 INFO  Memory monitor started
+2026.05.05 23:38:46 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.

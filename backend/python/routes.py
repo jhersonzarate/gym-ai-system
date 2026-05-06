@@ -29,7 +29,7 @@ class LoginRequest(BaseModel):
 class PerfilRequest(BaseModel):
     edad: int
     peso: float
-    altura: float        # en cm
+    altura: float        # en cm (el frontend ya lo normaliza)
     sexo: str            # masculino | femenino
     nivel: str           # principiante | intermedio | avanzado
     objetivo: str        # perder_grasa | ganar_musculo | mantener
@@ -56,7 +56,7 @@ def register(data: RegistroRequest):
         cur.execute("SELECT id FROM usuarios WHERE email = %s", (data.email,))
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Email ya registrado")
-        
+
         hashed = hash_password(data.password)
         cur.execute(
             "INSERT INTO usuarios (nombre, email, password_hash) VALUES (%s, %s, %s) RETURNING id",
@@ -70,6 +70,7 @@ def register(data: RegistroRequest):
         cur.close()
         conn.close()
 
+
 @router.post("/login")
 def login(data: LoginRequest):
     conn = get_connection()
@@ -82,12 +83,13 @@ def login(data: LoginRequest):
         row = cur.fetchone()
         if not row or not verify_password(data.password, row[2]):
             raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-        
+
         token = create_token(row[0], data.email)
         return {"token": token, "user_id": row[0], "nombre": row[1]}
     finally:
         cur.close()
         conn.close()
+
 
 @router.post("/generate-routine")
 def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
@@ -110,14 +112,18 @@ def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
     }
     prolog_result = consultar_prolog(perfil_dict)
 
-    # 3. Generación rutina Scala/Python
+    # 3. Añadir objetivo en ia_decision para que el frontend pueda accederlo
+    #    sin necesidad de cruzar con perfil
+    prolog_result["objetivo"] = perfil.objetivo
+
+    # 4. Generación rutina Scala/Python
     scala_params = {
         **perfil.dict(),
         **prolog_result
     }
     rutina = generar_rutina_scala(scala_params)
 
-    # 4. Guardar en historial
+    # 5. Guardar en historial
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -141,13 +147,17 @@ def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
             "imc_categoria": imc_cat,
             "bmr": bmr,
             "tdee": tdee,
-            "somatotipo": somatotipo
+            "somatotipo": somatotipo,
+            "objetivo": perfil.objetivo,       # incluir aquí también
+            "nivel": perfil.nivel,
+            "dias_disponibles": perfil.dias_disponibles,
         },
         "nutricion": macros,
-        "ia_decision": prolog_result,
+        "ia_decision": prolog_result,          # ya incluye objetivo
         "rutina": rutina,
         "progreso_simulado": progreso
     }
+
 
 @router.get("/history")
 def get_history(user=Depends(get_current_user)):
@@ -165,8 +175,8 @@ def get_history(user=Depends(get_current_user)):
         history = []
         for row in rows:
             history.append({
-                "id": row[0],
-                "fecha": row[1].isoformat(),
+                "id":     row[0],
+                "fecha":  row[1].isoformat(),
                 "perfil": row[2],
                 "rutina": row[3],
                 "macros": row[4]
@@ -175,6 +185,7 @@ def get_history(user=Depends(get_current_user)):
     finally:
         cur.close()
         conn.close()
+
 
 @router.get("/me")
 def get_me(user=Depends(get_current_user)):

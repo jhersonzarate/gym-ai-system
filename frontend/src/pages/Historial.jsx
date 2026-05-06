@@ -1,525 +1,305 @@
 // frontend/src/pages/Historial.jsx
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { gymAPI } from '../services/api'
 
-function EmptyState() {
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '80px 40px',
-      textAlign: 'center',
-    }}>
-      <div style={{
-        width: '72px',
-        height: '72px',
-        background: 'rgba(198,241,53,0.06)',
-        border: '1px solid rgba(198,241,53,0.15)',
-        borderRadius: '18px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: '24px',
-      }}>
-        <span className="material-icons-round" style={{ fontSize: '32px', color: 'var(--gym-lime)' }}>
-          history
-        </span>
-      </div>
-      <h3 className="font-condensed" style={{ fontSize: '22px', fontWeight: 700, color: 'var(--gym-text)', marginBottom: '10px', letterSpacing: '0.02em' }}>
-        Sin historial aún
-      </h3>
-      <p style={{ fontSize: '14px', color: 'var(--gym-muted)', maxWidth: '320px', lineHeight: 1.7 }}>
-        Genera tu primer plan personalizado y aparecerá aquí para que puedas consultarlo cuando quieras.
-      </p>
-    </div>
-  )
+const OBJETIVO_LABEL = {
+  perder_grasa:  { l: 'Perder grasa',   color: 'var(--gym-orange)', icon: 'trending_down' },
+  ganar_musculo: { l: 'Ganar musculo',  color: 'var(--gym-lime)',   icon: 'trending_up' },
+  mantener:      { l: 'Mantener peso',  color: '#60A5FA',           icon: 'balance' },
 }
 
-function LoadingState() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {[1, 2, 3].map(i => (
-        <div key={i} style={{
-          background: 'var(--gym-card)',
-          border: '1px solid var(--gym-border)',
-          borderRadius: '12px',
-          padding: '22px 24px',
-          opacity: 1 - i * 0.2,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div style={{ width: '40px', height: '40px', background: 'var(--gym-border)', borderRadius: '10px' }} />
-              <div>
-                <div style={{ width: '140px', height: '14px', background: 'var(--gym-border)', borderRadius: '4px', marginBottom: '8px' }} />
-                <div style={{ width: '100px', height: '11px', background: 'var(--gym-border)', borderRadius: '4px' }} />
-              </div>
-            </div>
-            <div style={{ width: '60px', height: '24px', background: 'var(--gym-border)', borderRadius: '6px' }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-const TIPO_LABELS = {
-  fullbody: 'Full Body',
-  upper_lower: 'Upper / Lower',
-  ppl: 'Push Pull Legs',
-  torso_pierna: 'Torso / Pierna',
+const TIPO_LABEL = {
+  fullbody:      'Full Body',
+  upper_lower:   'Upper / Lower',
+  ppl:           'Push Pull Legs',
+  torso_pierna:  'Torso / Pierna',
   especializado: 'Especializado',
 }
 
-const OBJETIVO_COLORS = {
-  perder_grasa:  { color: 'var(--gym-orange)', bg: 'rgba(242,101,34,0.1)', label: 'Perder Grasa',   icon: 'trending_down' },
-  ganar_musculo: { color: 'var(--gym-lime)',   bg: 'rgba(198,241,53,0.1)', label: 'Ganar Músculo', icon: 'trending_up'   },
-  mantener:      { color: '#60A5FA',           bg: 'rgba(96,165,250,0.1)', label: 'Mantener',      icon: 'balance'       },
-}
-
-const NIVEL_ICONS = {
-  principiante: 'energy_savings_leaf',
-  intermedio:   'local_fire_department',
-  avanzado:     'whatshot',
-}
-
-function HistorialItem({ item, index, isOpen, onToggle }) {
-  const perfil  = typeof item.perfil  === 'string' ? JSON.parse(item.perfil)  : item.perfil
-  const macros  = typeof item.macros  === 'string' ? JSON.parse(item.macros)  : item.macros
-  const rutina  = typeof item.rutina  === 'string' ? JSON.parse(item.rutina)  : item.rutina
-
-  const fecha   = new Date(item.fecha)
-  const fechaStr = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-  const horaStr  = fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
-
-  const objetivo  = OBJETIVO_COLORS[perfil?.objetivo] || OBJETIVO_COLORS.mantener
-  const tipoLabel = TIPO_LABELS[rutina?.tipo_rutina] || rutina?.tipo_rutina?.toUpperCase() || 'N/A'
-
-  return (
-    <div
-      className={`animate-fade-up stagger-${Math.min(index + 1, 4)}`}
-      style={{
-        background: 'var(--gym-card)',
-        border: isOpen ? '1px solid rgba(198,241,53,0.2)' : '1px solid var(--gym-border)',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        transition: 'border-color 0.2s',
-      }}
-    >
-      {/* Header row */}
-      <button
-        onClick={onToggle}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '20px 24px',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          transition: 'background 0.15s',
-          gap: '16px',
-        }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'none'}
-      >
-        {/* Left: icon + info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-          {/* Plan number badge */}
-          <div style={{
-            width: '44px',
-            height: '44px',
-            background: isOpen ? 'var(--gym-lime)' : 'rgba(198,241,53,0.08)',
-            border: `1px solid ${isOpen ? 'var(--gym-lime)' : 'rgba(198,241,53,0.2)'}`,
-            borderRadius: '11px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            transition: 'all 0.2s',
-          }}>
-            <span className="font-condensed" style={{
-              fontSize: '16px',
-              fontWeight: 700,
-              color: isOpen ? '#080A0C' : 'var(--gym-lime)',
-            }}>
-              #{item.id}
-            </span>
-          </div>
-
-          {/* Info */}
-          <div style={{ textAlign: 'left', minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px', flexWrap: 'wrap' }}>
-              <span className="font-condensed" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--gym-text)', letterSpacing: '0.02em' }}>
-                {tipoLabel}
-              </span>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '2px 10px',
-                background: objetivo.bg,
-                borderRadius: '100px',
-                flexShrink: 0,
-              }}>
-                <span className="material-icons-round" style={{ fontSize: '12px', color: objetivo.color }}>{objetivo.icon}</span>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: objetivo.color, fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.06em' }}>
-                  {objetivo.label}
-                </span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--gym-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span className="material-icons-round" style={{ fontSize: '13px' }}>calendar_today</span>
-                {fechaStr}
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--gym-muted)' }}>·</span>
-              <span style={{ fontSize: '12px', color: 'var(--gym-muted)' }}>{horaStr}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: kcal + chevron */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexShrink: 0 }}>
-          <div style={{ textAlign: 'right' }}>
-            <div className="font-condensed" style={{ fontSize: '22px', fontWeight: 700, color: 'var(--gym-lime)', lineHeight: 1 }}>
-              {macros?.calorias_objetivo?.toLocaleString()}
-            </div>
-            <div style={{ fontSize: '10px', color: 'var(--gym-muted)', letterSpacing: '0.06em' }}>KCAL / DÍA</div>
-          </div>
-          <span className="material-icons-round" style={{
-            fontSize: '20px',
-            color: 'var(--gym-muted)',
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.25s cubic-bezier(0.16,1,0.3,1)',
-          }}>
-            expand_more
-          </span>
-        </div>
-      </button>
-
-      {/* Expanded detail */}
-      {isOpen && (
-        <div style={{
-          padding: '0 24px 24px',
-          borderTop: '1px solid var(--gym-border)',
-          paddingTop: '20px',
-          animation: 'fadeUp 0.3s cubic-bezier(0.16,1,0.3,1) forwards',
-        }}>
-          {/* Physical stats row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '16px' }}>
-            {[
-              { label: 'Nivel',       value: perfil?.nivel,                            icon: NIVEL_ICONS[perfil?.nivel] || 'military_tech', color: '#60A5FA' },
-              { label: 'Días/sem',    value: `${perfil?.dias_disponibles} días`,        icon: 'calendar_today',                              color: '#A78BFA' },
-              { label: 'IMC',         value: perfil?.imc?.toString() || '—',            icon: 'monitor_weight',                              color: 'var(--gym-lime)' },
-              { label: 'Somatotipo',  value: perfil?.somatotipo || '—',                 icon: 'accessibility_new',                           color: 'var(--gym-orange)' },
-            ].map(({ label, value, icon, color }) => (
-              <div key={label} style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid var(--gym-border)',
-                borderRadius: '8px',
-                padding: '12px 14px',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                  <span className="material-icons-round" style={{ fontSize: '13px', color }}>{icon}</span>
-                  <span style={{ fontSize: '10px', color: 'var(--gym-muted)', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    {label}
-                  </span>
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--gym-text)', textTransform: 'capitalize' }}>
-                  {value}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Macros row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-            {[
-              { label: 'Proteínas',     value: macros?.proteinas_g,     unit: 'g', color: '#60A5FA', icon: 'egg_alt' },
-              { label: 'Carbohidratos', value: macros?.carbohidratos_g, unit: 'g', color: '#F59E0B', icon: 'grain'   },
-              { label: 'Grasas',        value: macros?.grasas_g,        unit: 'g', color: 'var(--gym-orange)', icon: 'opacity' },
-            ].map(({ label, value, unit, color, icon }) => (
-              <div key={label} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid var(--gym-border)',
-                borderRadius: '8px',
-                padding: '12px 14px',
-              }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  background: `${color}15`,
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <span className="material-icons-round" style={{ fontSize: '16px', color }}>{icon}</span>
-                </div>
-                <div>
-                  <div style={{ fontSize: '10px', color: 'var(--gym-muted)', marginBottom: '3px', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    {label}
-                  </div>
-                  <div className="font-condensed" style={{ fontSize: '20px', fontWeight: 700, color, lineHeight: 1 }}>
-                    {value}<span style={{ fontSize: '12px', color: 'var(--gym-muted)', marginLeft: '2px', fontFamily: 'Barlow, sans-serif', fontWeight: 400 }}>{unit}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
+const NIVEL_COLOR = {
+  principiante: '#4ADE80',
+  intermedio:   '#F59E0B',
+  avanzado:     '#EF4444',
 }
 
 export default function Historial() {
-  const navigate = useNavigate()
-  const [items,      setItems]      = useState([])
-  const [savedItems, setSavedItems] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('gym_saved_results') || '[]')
-    } catch {
-      return []
-    }
-  })
-  const [loading,    setLoading]    = useState(true)
-  const [open,       setOpen]       = useState(null)
-  const [error,      setError]      = useState('')
+  const [items, setItems]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState(null)
+  const [error, setError]   = useState('')
 
   useEffect(() => {
     gymAPI.getHistory()
       .then(({ data }) => setItems(data.historial || []))
-      .catch(() => setError('No se pudo cargar el historial. Verifica tu conexión.'))
+      .catch(() => setError('No se pudo cargar el historial'))
       .finally(() => setLoading(false))
   }, [])
 
-  const handleViewSaved = (item) => {
-    localStorage.setItem('gym_resultado', JSON.stringify(item.resultado))
-    navigate('/resultados')
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: '16px' }}>
+      <div style={{
+        width: '40px', height: '40px',
+        border: '3px solid var(--gym-border)',
+        borderTopColor: 'var(--gym-lime)',
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <span style={{ fontSize: '14px', color: 'var(--gym-muted)' }}>Cargando historial...</span>
+    </div>
+  )
 
-  const handleDeleteSaved = (id) => {
-    const next = savedItems.filter(item => item.id !== id)
-    localStorage.setItem('gym_saved_results', JSON.stringify(next))
-    setSavedItems(next)
-  }
+  if (error) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: '12px' }}>
+      <span className="material-icons-round" style={{ fontSize: '40px', color: 'var(--gym-red)' }}>error_outline</span>
+      <p style={{ color: 'var(--gym-muted)', fontSize: '14px' }}>{error}</p>
+    </div>
+  )
+
+  if (!items.length) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '360px', flexDirection: 'column', gap: '16px' }}>
+      <div style={{
+        width: '72px', height: '72px',
+        background: 'var(--gym-card)',
+        border: '1px solid var(--gym-border)',
+        borderRadius: '16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span className="material-icons-round" style={{ fontSize: '32px', color: 'var(--gym-border2)' }}>history</span>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--gym-text)', marginBottom: '6px' }}>Sin historial todavia</p>
+        <p style={{ fontSize: '13px', color: 'var(--gym-muted)' }}>Genera tu primer plan en la seccion "Nuevo Plan"</p>
+      </div>
+    </div>
+  )
 
   return (
-    <div className="animate-fade-up" style={{ maxWidth: '860px', margin: '0 auto' }}>
+    <div className="animate-fade-up" style={{ maxWidth: '880px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', gap: '16px' }}>
+      <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
-          <div className="label-tag" style={{ marginBottom: '6px', color: 'var(--gym-lime)' }}>Registro</div>
+          <div className="label-tag" style={{ marginBottom: '6px' }}>Registro de sesiones</div>
           <h1 className="font-condensed" style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '0.02em' }}>
-            Historial de Planes
+            Historial de planes
           </h1>
           <p style={{ color: 'var(--gym-muted)', fontSize: '13px', marginTop: '4px' }}>
-            {items.length > 0 ? `${items.length} planes generados` : 'Sin historial en servidor'}
-            {savedItems.length > 0 ? ` · ${savedItems.length} guardados locales` : ''}
+            Ultimos {items.length} planes generados
           </p>
         </div>
 
-        {items.length > 0 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            background: 'rgba(198,241,53,0.06)',
-            border: '1px solid rgba(198,241,53,0.15)',
-            borderRadius: '8px',
-          }}>
-            <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--gym-lime)' }}>
-              check_circle
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gym-lime)', fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.04em' }}>
-              {items.length} planes guardados
-            </span>
-          </div>
-        )}
+        {/* Stats rapidas */}
+        <div style={{ display: 'flex', gap: '16px' }}>
+          {[
+            { label: 'Planes totales',   value: items.length,  icon: 'assignment' },
+            {
+              label: 'Ultimo objetivo',
+              value: (() => {
+                const p = typeof items[0]?.perfil === 'string' ? JSON.parse(items[0].perfil) : items[0]?.perfil
+                return OBJETIVO_LABEL[p?.objetivo]?.l || '-'
+              })(),
+              icon: 'flag',
+            },
+          ].map(({ label, value, icon }) => (
+            <div key={label} style={{
+              background: 'var(--gym-card)',
+              border: '1px solid var(--gym-border)',
+              borderRadius: '10px',
+              padding: '12px 18px',
+              textAlign: 'center',
+              minWidth: '120px',
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--gym-lime)', display: 'block', marginBottom: '4px' }}>{icon}</span>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gym-text)' }}>{value}</div>
+              <div style={{ fontSize: '11px', color: 'var(--gym-muted)', marginTop: '2px' }}>{label}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {savedItems.length > 0 && (
-        <div style={{ marginBottom: '24px', padding: '20px', background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-            <div>
-              <div className="label-tag" style={{ marginBottom: '6px', color: 'var(--gym-lime)' }}>Guardados</div>
-              <h2 className="font-condensed" style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '0.02em' }}>
-                Planes guardados localmente
-              </h2>
-              <p style={{ fontSize: '13px', color: 'var(--gym-muted)', marginTop: '4px' }}>
-                Selecciona un plan para verlo en la pantalla de Resultados.
-              </p>
-            </div>
-          </div>
+      {/* Lista */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {items.map((item, i) => {
+          const perfil = typeof item.perfil === 'string' ? JSON.parse(item.perfil) : item.perfil
+          const macros = typeof item.macros === 'string' ? JSON.parse(item.macros) : item.macros
+          const rutina = typeof item.rutina === 'string' ? JSON.parse(item.rutina) : item.rutina
+          const obj    = OBJETIVO_LABEL[perfil?.objetivo] || { l: perfil?.objetivo, color: 'var(--gym-muted)', icon: 'flag' }
+          const tipo   = TIPO_LABEL[rutina?.tipo_rutina] || rutina?.tipo_rutina
+          const nivelColor = NIVEL_COLOR[perfil?.nivel] || 'var(--gym-muted)'
+          const isOpen = expanded === i
+          const fecha  = new Date(item.fecha)
+          const fechaStr = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+          const horaStr  = fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px' }}>
-            {savedItems.map((item) => {
-              const perfil = item.perfil
-              const objetivo = OBJETIVO_COLORS[perfil?.objetivo] || OBJETIVO_COLORS.mantener
-              const fecha = new Date(item.fecha)
-              const fechaStr = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-              return (
-                <div key={item.id} style={{ background: 'var(--gym-dark)', border: '1px solid var(--gym-border)', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gym-text)' }}>
-                        {OBJETIVO_COLORS[perfil?.objetivo]?.label || 'Plan guardado'}
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--gym-muted)', marginTop: '5px' }}>
-                        {fechaStr}
-                      </div>
-                    </div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', background: objetivo.bg, borderRadius: '999px', color: objetivo.color, fontSize: '11px', fontWeight: 700 }}>
-                      <span className="material-icons-round" style={{ fontSize: '14px' }}>{objetivo.icon}</span>
-                      {objetivo.label}
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--gym-lime)' }}>
-                    {item.resultado?.nutricion?.calorias_objetivo?.toLocaleString() || '—'} kcal/día
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleViewSaved(item)}
-                      className="btn-ghost"
-                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
-                    >
-                      Ver resultado
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSaved(item.id)}
-                      className="btn-ghost"
-                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px', borderColor: 'rgba(239,68,68,0.35)', color: '#F87171' }}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Stats summary bar — solo si hay items */}
-      {!loading && items.length > 0 && (() => {
-        const perfilesValidos = items.map(i => {
-          try { return typeof i.perfil === 'string' ? JSON.parse(i.perfil) : i.perfil } catch { return null }
-        }).filter(Boolean)
-
-        const objetivos = perfilesValidos.reduce((acc, p) => {
-          if (p?.objetivo) acc[p.objetivo] = (acc[p.objetivo] || 0) + 1
-          return acc
-        }, {})
-
-        const masComun = Object.entries(objetivos).sort((a, b) => b[1] - a[1])[0]?.[0]
-        const masComonLabel = OBJETIVO_COLORS[masComun]?.label || masComun
-
-        const macrosArr = items.map(i => {
-          try { return typeof i.macros === 'string' ? JSON.parse(i.macros) : i.macros } catch { return null }
-        }).filter(Boolean)
-
-        const avgKcal = macrosArr.length
-          ? Math.round(macrosArr.reduce((s, m) => s + (m?.calorias_objetivo || 0), 0) / macrosArr.length)
-          : 0
-
-        return (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
-            {[
-              { label: 'Total de planes',    value: items.length.toString(),   icon: 'assignment',      accent: 'var(--gym-lime)' },
-              { label: 'Objetivo frecuente', value: masComonLabel || '—',      icon: 'flag',            accent: 'var(--gym-orange)' },
-              { label: 'Promedio kcal/día',  value: avgKcal ? `${avgKcal.toLocaleString()} kcal` : '—', icon: 'local_fire_department', accent: '#F59E0B' },
-            ].map(({ label, value, icon, accent }) => (
-              <div key={label} style={{
+          return (
+            <div
+              key={item.id}
+              className={`animate-fade-up stagger-${Math.min(i + 1, 4)}`}
+              style={{
                 background: 'var(--gym-card)',
-                border: '1px solid var(--gym-border)',
-                borderRadius: '10px',
-                padding: '16px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-              }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  background: `${accent}12`,
-                  borderRadius: '9px',
+                border: `1px solid ${isOpen ? 'rgba(198,241,53,0.2)' : 'var(--gym-border)'}`,
+                borderRadius: '12px',
+                overflow: 'hidden',
+                transition: 'border-color 0.2s',
+              }}
+            >
+              {/* Cabecera del plan */}
+              <button
+                onClick={() => setExpanded(isOpen ? null : i)}
+                style={{
+                  width: '100%',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  gap: '16px',
+                  padding: '18px 22px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                {/* Numero */}
+                <div style={{
+                  width: '44px', height: '44px',
+                  background: isOpen ? 'rgba(198,241,53,0.12)' : 'var(--gym-dark)',
+                  border: `1px solid ${isOpen ? 'rgba(198,241,53,0.25)' : 'var(--gym-border2)'}`,
+                  borderRadius: '10px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
+                  transition: 'all 0.15s',
                 }}>
-                  <span className="material-icons-round" style={{ fontSize: '18px', color: accent }}>{icon}</span>
+                  <span className="font-condensed" style={{ fontSize: '18px', fontWeight: 700, color: isOpen ? 'var(--gym-lime)' : 'var(--gym-muted)' }}>
+                    #{item.id}
+                  </span>
                 </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--gym-muted)', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '3px' }}>
-                    {label}
+
+                {/* Info principal */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                    <span className="font-condensed" style={{ fontSize: '17px', fontWeight: 700, letterSpacing: '0.02em', color: 'var(--gym-text)' }}>
+                      {tipo}
+                    </span>
+                    {/* Objetivo badge */}
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '4px',
+                      padding: '3px 10px',
+                      borderRadius: '100px',
+                      background: `${obj.color}12`,
+                      border: `1px solid ${obj.color}25`,
+                      fontSize: '11px', fontWeight: 700,
+                      color: obj.color,
+                      fontFamily: 'Barlow Condensed, sans-serif',
+                      letterSpacing: '0.06em',
+                    }}>
+                      <span className="material-icons-round" style={{ fontSize: '12px' }}>{obj.icon}</span>
+                      {obj.l?.toUpperCase()}
+                    </span>
+                    {/* Nivel badge */}
+                    <span style={{
+                      padding: '3px 10px',
+                      borderRadius: '100px',
+                      background: `${nivelColor}12`,
+                      border: `1px solid ${nivelColor}25`,
+                      fontSize: '11px', fontWeight: 700,
+                      color: nivelColor,
+                      fontFamily: 'Barlow Condensed, sans-serif',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}>
+                      {perfil?.nivel}
+                    </span>
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--gym-text)', textTransform: 'capitalize' }}>
-                    {value}
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--gym-muted)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="material-icons-round" style={{ fontSize: '13px' }}>calendar_today</span>
+                      {fechaStr}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="material-icons-round" style={{ fontSize: '13px' }}>schedule</span>
+                      {horaStr}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="material-icons-round" style={{ fontSize: '13px' }}>local_fire_department</span>
+                      {macros?.calorias_objetivo} kcal/dia
+                    </span>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )
-      })()}
 
-      {/* Content */}
-      {loading ? (
-        <LoadingState />
-      ) : error ? (
-        <div style={{
-          background: 'rgba(239,68,68,0.08)',
-          border: '1px solid rgba(239,68,68,0.2)',
-          borderRadius: '10px',
-          padding: '20px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-        }}>
-          <span className="material-icons-round" style={{ fontSize: '20px', color: 'var(--gym-red)' }}>error_outline</span>
-          <span style={{ fontSize: '14px', color: '#FCA5A5' }}>{error}</span>
-        </div>
-      ) : items.length === 0 && savedItems.length === 0 ? (
-        <div style={{ background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: '12px' }}>
-          <EmptyState />
-        </div>
-      ) : items.length === 0 ? (
-        <div style={{ background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gym-text)', marginBottom: '10px' }}>No hay historial en el servidor</div>
-          <div style={{ fontSize: '14px', color: 'var(--gym-muted)' }}>Sin embargo, tienes resultados guardados localmente que puedes abrir desde arriba.</div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {items.map((item, i) => (
-            <HistorialItem
-              key={item.id}
-              item={item}
-              index={i}
-              isOpen={open === i}
-              onToggle={() => setOpen(open === i ? null : i)}
-            />
-          ))}
+                {/* Chevron */}
+                <span className="material-icons-round" style={{
+                  fontSize: '22px',
+                  color: isOpen ? 'var(--gym-lime)' : 'var(--gym-muted)',
+                  transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
+                  transition: 'transform 0.2s, color 0.15s',
+                  flexShrink: 0,
+                }}>expand_more</span>
+              </button>
 
-          <p style={{ fontSize: '11px', color: 'var(--gym-muted)', textAlign: 'center', marginTop: '8px', letterSpacing: '0.02em' }}>
-            Se muestran los últimos 10 planes · Los planes más antiguos se archivan automáticamente
-          </p>
-        </div>
-      )}
+              {/* Detalle expandido */}
+              {isOpen && (
+                <div style={{
+                  borderTop: '1px solid var(--gym-border)',
+                  padding: '20px 22px',
+                  animation: 'fadeUp 0.3s ease forwards',
+                }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
+                    {/* Datos fisicos */}
+                    {[
+                      { l: 'Peso',    v: `${perfil?.peso} kg`,        icon: 'monitor_weight' },
+                      { l: 'Altura',  v: `${perfil?.altura} cm`,      icon: 'height' },
+                      { l: 'Edad',    v: `${perfil?.edad} anos`,      icon: 'cake' },
+                      { l: 'Sexo',    v: perfil?.sexo,                 icon: 'person' },
+                      { l: 'IMC',     v: perfil?.imc || '-',           icon: 'analytics' },
+                      { l: 'Dias/sem',v: `${perfil?.dias_disponibles}`, icon: 'calendar_today' },
+                    ].map(({ l, v, icon }) => (
+                      <div key={l} style={{
+                        background: 'var(--gym-dark)',
+                        borderRadius: '8px',
+                        padding: '12px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}>
+                        <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--gym-muted)' }}>{icon}</span>
+                        <div>
+                          <div style={{ fontSize: '11px', color: 'var(--gym-muted)', letterSpacing: '0.04em' }}>{l}</div>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gym-text)', textTransform: 'capitalize' }}>{v}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Macros */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '10px',
+                    padding: '16px',
+                    background: 'rgba(198,241,53,0.04)',
+                    border: '1px solid rgba(198,241,53,0.12)',
+                    borderRadius: '10px',
+                  }}>
+                    {[
+                      { l: 'Calorias',    v: macros?.calorias_objetivo,  unit: 'kcal', color: 'var(--gym-lime)' },
+                      { l: 'Proteinas',   v: `${macros?.proteinas_g}g`,   unit: '',     color: '#60A5FA' },
+                      { l: 'Carbohidratos',v: `${macros?.carbohidratos_g}g`,unit:'',    color: '#F59E0B' },
+                      { l: 'Grasas',      v: `${macros?.grasas_g}g`,      unit: '',     color: 'var(--gym-orange)' },
+                    ].map(({ l, v, unit, color }) => (
+                      <div key={l} style={{ textAlign: 'center' }}>
+                        <div className="font-condensed" style={{ fontSize: '22px', fontWeight: 700, color, lineHeight: 1 }}>{v}</div>
+                        {unit && <span style={{ fontSize: '11px', color: 'var(--gym-muted)' }}>{unit}</span>}
+                        <div style={{ fontSize: '11px', color: 'var(--gym-muted)', marginTop: '4px' }}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
