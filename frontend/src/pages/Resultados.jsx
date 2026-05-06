@@ -4,12 +4,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExplicacionCard from '../components/ExplicacionCard'
 import ProgressChart   from '../components/ProgressChart'
 
+
 /* ─── Helpers ─── */
 function parseSafe(v) {
   if (!v) return null
   if (typeof v === 'object') return v
   try { return JSON.parse(v) } catch { return null }
 }
+
 
 /* ─── Sub-componentes ─── */
 function StatCard({ icon, label, value, sub, accent = 'var(--lime)' }) {
@@ -38,6 +40,7 @@ function StatCard({ icon, label, value, sub, accent = 'var(--lime)' }) {
     </div>
   )
 }
+
 
 function MacroBar({ label, valor, kcal, pct, color, icon }) {
   return (
@@ -70,6 +73,7 @@ function MacroBar({ label, valor, kcal, pct, color, icon }) {
   )
 }
 
+
 const TIPO_LABELS = {
   fullbody:      'Full Body',
   upper_lower:   'Upper / Lower',
@@ -78,14 +82,17 @@ const TIPO_LABELS = {
   especializado: 'Especializado',
 }
 
+
 const TABS = [
-  { k: 'rutina',        l: 'Rutina Semanal',    icon: 'fitness_center' },
-  { k: 'nutricion',     l: 'Nutrición',          icon: 'restaurant'    },
-  { k: 'razonamiento',  l: 'Por qué este plan',  icon: 'lightbulb'     },
-  { k: 'progreso',      l: 'Progreso Estimado',  icon: 'show_chart'    },
+  { k: 'rutina',       l: 'Rutina Semanal',   icon: 'fitness_center' },
+  { k: 'nutricion',    l: 'Nutrición',         icon: 'restaurant'     },
+  { k: 'razonamiento', l: 'Por qué este plan', icon: 'lightbulb'      },
+  { k: 'progreso',     l: 'Progreso Estimado', icon: 'show_chart'     },
 ]
 
+
 /* ─── Página ─── */
+// ✅ REEMPLAZAR TODO EL useEffect POR ESTO:
 export default function Resultados() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -93,24 +100,24 @@ export default function Resultados() {
   const tabParam = searchParams.get('tab')
   const [tab,     setTab]    = useState(TABS.find(t => t.k === tabParam) ? tabParam : 'rutina')
   const [openDia, setOpenDia] = useState(0)
-  const [data] = useState(() => {
-  const raw = localStorage.getItem('gym_resultado')
-  if (!raw) return null
 
-  try {
-    return JSON.parse(raw)
-  } catch {
-    localStorage.removeItem('gym_resultado')
-    return null
+  // ✅ LECTURA DIRECTA DE localStorage - SIN useEffect
+  const raw = localStorage.getItem('gym_resultado')
+  let data = null
+  if (raw) {
+    try {
+      data = JSON.parse(raw)
+    } catch {
+      localStorage.removeItem('gym_resultado')
+    }
   }
-})
 
   const changeTab = (k) => {
     setTab(k)
     setSearchParams({ tab: k })
   }
 
-  // ✅ Sin estado `checking` — la lectura de localStorage es instantánea
+  // ✅ Sin estado checking — la lectura de localStorage es instantánea
   if (!data) {
     return (
       <div style={{
@@ -150,11 +157,11 @@ export default function Resultados() {
   }
 
   /* ── Extraer campos con fallback robusto ── */
-  const perfil    = parseSafe(data.perfil)    || {}
-  const nutricion = parseSafe(data.nutricion) || {}
+  const perfil    = parseSafe(data.perfil)      || {}
+  const nutricion = parseSafe(data.nutricion)   || {}
   const ia        = parseSafe(data.ia_decision) || {}
-  const rutina    = parseSafe(data.rutina)    || {}
-  const progreso  = data.progreso_simulado    || []
+  const rutina    = parseSafe(data.rutina)      || {}
+  const progreso  = data.progreso_simulado      || []
 
   const objetivo = perfil.objetivo || ia.objetivo || 'mantener'
 
@@ -229,19 +236,19 @@ export default function Resultados() {
 
       {/* ── Stats físicos ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-        <StatCard icon="monitor_weight"        label="IMC"        value={perfil.imc || '—'}         sub={perfil.imc_categoria?.replace(/_/g, ' ')} />
-        <StatCard icon="local_fire_department" label="BMR"        value={perfil.bmr || '—'}         sub="kcal basales"       accent="var(--orange)" />
-        <StatCard icon="bolt"                  label="TDEE"       value={perfil.tdee || '—'}        sub="kcal con actividad" accent="#F59E0B"        />
-        <StatCard icon="accessibility_new"     label="Somatotipo" value={perfil.somatotipo || '—'}  sub="tipo corporal"      accent="#A78BFA"        />
+        <StatCard icon="monitor_weight"        label="IMC"        value={perfil.imc || '—'}        sub={perfil.imc_categoria?.replace(/_/g, ' ')} />
+        <StatCard icon="local_fire_department" label="BMR"        value={perfil.bmr || '—'}        sub="kcal basales"       accent="var(--orange)" />
+        <StatCard icon="bolt"                  label="TDEE"       value={perfil.tdee || '—'}       sub="kcal con actividad" accent="#F59E0B"        />
+        <StatCard icon="accessibility_new"     label="Somatotipo" value={perfil.somatotipo || '—'} sub="tipo corporal"      accent="#A78BFA"        />
       </div>
 
       {/* ── Decisiones del sistema ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 22 }}>
         {[
-          { l: 'Tipo Rutina', v: tipoLabel,                                          icon: 'fitness_center', accent: 'var(--lime)'   },
-          { l: 'Frecuencia',  v: ia.frecuencia ? `${ia.frecuencia} días/sem` : '—',  icon: 'calendar_today', accent: '#60A5FA'       },
-          { l: 'Intensidad',  v: ia.intensidad || '—',                               icon: 'speed',          accent: 'var(--orange)' },
-          { l: 'Cardio',      v: ia.usa_cardio ? 'Incluido' : 'Sin cardio',          icon: 'directions_run', accent: ia.usa_cardio ? 'var(--lime)' : '#6B7280' },
+          { l: 'Tipo Rutina', v: tipoLabel,                                         icon: 'fitness_center', accent: 'var(--lime)'   },
+          { l: 'Frecuencia',  v: ia.frecuencia ? `${ia.frecuencia} días/sem` : '—', icon: 'calendar_today', accent: '#60A5FA'       },
+          { l: 'Intensidad',  v: ia.intensidad || '—',                              icon: 'speed',          accent: 'var(--orange)' },
+          { l: 'Cardio',      v: ia.usa_cardio ? 'Incluido' : 'Sin cardio',         icon: 'directions_run', accent: ia.usa_cardio ? 'var(--lime)' : '#6B7280' },
         ].map(({ l, v, icon, accent }) => (
           <div key={l} style={{
             background: `${accent}08`,
@@ -479,9 +486,9 @@ export default function Resultados() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'BMR',  value: perfil.bmr,  sub: 'Calorías en reposo',    icon: 'bedtime', color: '#A78BFA' },
-                { label: 'TDEE', value: perfil.tdee, sub: 'Calorías con actividad', icon: 'bolt',   color: '#F59E0B' },
-                { label: 'META', value: totalKcal,   sub: 'Objetivo diario',        icon: 'flag',   color: 'var(--lime)' },
+                { label: 'BMR',  value: perfil.bmr,  sub: 'Calorías en reposo',    icon: 'bedtime', color: '#A78BFA'      },
+                { label: 'TDEE', value: perfil.tdee, sub: 'Calorías con actividad', icon: 'bolt',   color: '#F59E0B'      },
+                { label: 'META', value: totalKcal,   sub: 'Objetivo diario',        icon: 'flag',   color: 'var(--lime)'  },
               ].map(({ label, value, sub, icon, color }) => (
                 <div key={label} style={{
                   background: 'var(--card)', border: '1px solid var(--border)',

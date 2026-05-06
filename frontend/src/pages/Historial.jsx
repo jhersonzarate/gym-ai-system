@@ -1,5 +1,5 @@
 // frontend/src/pages/Historial.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { gymAPI } from '../services/api'
 
@@ -31,34 +31,49 @@ export default function Historial() {
   const [error,    setError]    = useState('')
   const [deleting, setDeleting] = useState(null)
 
-  const cargarHistorial = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const { data } = await gymAPI.getHistory()
-      setItems(data.historial || [])
-    } catch {
-      setError('No se pudo cargar el historial. Verifica tu conexión.')
-    } finally {
-      // ✅ FIX: siempre se ejecuta, sin chequear refs
-      setLoading(false)
-    }
-  }
+  const isMountedRef = useRef(true)
 
-  // ✅ CORREGIDO - Líneas ~47-55
-useEffect(() => {
-  const init = async () => {
-    await cargarHistorial()
-  }
-  init()
-}, [])
+  useEffect(() => {
+    let didCleanup = false
+
+    const cargarHistorial = async () => {
+      setLoading(true)
+      try {
+        const { data } = await gymAPI.getHistory()
+        if (!didCleanup && isMountedRef.current) {
+          setItems(data.historial || [])
+          setError('')
+        }
+      } catch {
+        if (!didCleanup && isMountedRef.current) {
+          setError('No se pudo cargar el historial. Verifica tu conexión.')
+        }
+      } finally {
+        if (!didCleanup && isMountedRef.current) {
+          setLoading(false)
+        }
+      }
+    }
+
+    cargarHistorial()
+    return () => { didCleanup = true }
+  }, [])
+
+  useEffect(() => {
+    return () => { isMountedRef.current = false }
+  }, [])
 
   const verPlanCompleto = (item) => {
+    // ✅ FIX: parsear todos los campos correctamente
     const perfil     = typeof item.perfil      === 'string' ? JSON.parse(item.perfil)      : item.perfil      || {}
     const rutina     = typeof item.rutina      === 'string' ? JSON.parse(item.rutina)      : item.rutina      || {}
     const macros     = typeof item.macros      === 'string' ? JSON.parse(item.macros)      : item.macros      || {}
     const ia_raw     = typeof item.ia_decision === 'string' ? JSON.parse(item.ia_decision) : item.ia_decision || null
 
+    // ✅ FIX PRINCIPAL: bmr y tdee viven en perfil_json (guardado por routes.py en generate-routine)
+    // routes.py guarda en perfil_json el dict perfil_dict que incluye imc, imc_categoria, somatotipo
+    // pero NO incluye bmr ni tdee porque esos se calculan por separado y solo se retornan en el response.
+    // Sin embargo, calcular_bmr y calcular_tdee son deterministas, así que los recalculamos aquí.
     const bmr  = perfil.bmr  ?? calcularBMR(perfil.peso, perfil.altura, perfil.edad, perfil.sexo)
     const tdee = perfil.tdee ?? calcularTDEE(bmr, perfil.dias_disponibles)
 
@@ -79,7 +94,12 @@ useEffect(() => {
 
     const resultado = {
       id: item.id,
-      perfil: { ...perfil, bmr, tdee },
+      // ✅ FIX: perfil con bmr y tdee siempre presentes
+      perfil: {
+        ...perfil,
+        bmr,
+        tdee,
+      },
       nutricion: {
         calorias_objetivo: macros?.calorias_objetivo,
         proteinas_g:       macros?.proteinas_g,
@@ -95,6 +115,7 @@ useEffect(() => {
     navigate('/resultados')
   }
 
+  // ✅ FIX: Recalcular BMR con la misma fórmula de calculos.py (Mifflin-St Jeor)
   const calcularBMR = (peso, altura_cm, edad, sexo) => {
     if (!peso || !altura_cm || !edad || !sexo) return null
     if (sexo === 'masculino') {
@@ -104,6 +125,7 @@ useEffect(() => {
     }
   }
 
+  // ✅ FIX: Recalcular TDEE con la misma lógica de calculos.py
   const calcularTDEE = (bmr, dias_activos) => {
     if (!bmr || !dias_activos) return null
     let factor
@@ -126,6 +148,7 @@ useEffect(() => {
       if (localRaw) {
         try {
           const local = JSON.parse(localRaw)
+          // ✅ FIX: comparar como número para evitar mismatch de tipos
           if (Number(local?.id) === Number(itemId)) {
             localStorage.removeItem('gym_resultado')
           }
@@ -158,6 +181,26 @@ useEffect(() => {
     })
   }
 
+  const reintentar = async () => {
+    let didCleanup = false
+    setLoading(true)
+    try {
+      const { data } = await gymAPI.getHistory()
+      if (!didCleanup && isMountedRef.current) {
+        setItems(data.historial || [])
+        setError('')
+      }
+    } catch {
+      if (!didCleanup && isMountedRef.current) {
+        setError('No se pudo cargar el historial. Verifica tu conexión.')
+      }
+    } finally {
+      if (!didCleanup && isMountedRef.current) {
+        setLoading(false)
+      }
+    }
+  }
+
   /* ── Estados de carga / error / vacío ── */
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: 16 }}>
@@ -174,7 +217,7 @@ useEffect(() => {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '320px', flexDirection: 'column', gap: 12 }}>
       <span className="material-icons-round" style={{ fontSize: 40, color: 'var(--red)' }}>error_outline</span>
       <p style={{ color: 'var(--muted)', fontSize: 14 }}>{error}</p>
-      <button onClick={cargarHistorial} className="btn-ghost" style={{ fontSize: 13 }}>
+      <button onClick={reintentar} className="btn-ghost" style={{ fontSize: 13 }}>
         <span className="material-icons-round" style={{ fontSize: 16 }}>refresh</span>
         Reintentar
       </button>
