@@ -29,28 +29,39 @@ export default function Historial() {
   const [loading,  setLoading]  = useState(true)
   const [expanded, setExpanded] = useState(null)
   const [error,    setError]    = useState('')
-  const [deleting, setDeleting] = useState(null)   // id del item que se está borrando
+  const [deleting, setDeleting] = useState(null)
 
-  const cargarHistorial = () => {
+  const cargarHistorial = async () => {
     setLoading(true)
-    gymAPI.getHistory()
-      .then(({ data }) => setItems(data.historial || []))
-      .catch(() => setError('No se pudo cargar el historial. Verifica tu conexión.'))
-      .finally(() => setLoading(false))
+    setError('')
+    try {
+      const { data } = await gymAPI.getHistory()
+      setItems(data.historial || [])
+    } catch {
+      setError('No se pudo cargar el historial. Verifica tu conexión.')
+    } finally {
+      // ✅ FIX: siempre se ejecuta, sin chequear refs
+      setLoading(false)
+    }
   }
 
-  useEffect(() => {
-    cargarHistorial()
-  }, [])
+  // ✅ CORREGIDO - Líneas ~47-55
+useEffect(() => {
+  const init = async () => {
+    await cargarHistorial()
+  }
+  init()
+}, [])
 
-  // Cargar un plan del historial como resultado activo → ir a Resultados
   const verPlanCompleto = (item) => {
-    const perfil     = typeof item.perfil      === 'string' ? JSON.parse(item.perfil)      : item.perfil
-    const rutina     = typeof item.rutina      === 'string' ? JSON.parse(item.rutina)      : item.rutina
-    const macros     = typeof item.macros      === 'string' ? JSON.parse(item.macros)      : item.macros
-    const ia_raw     = typeof item.ia_decision === 'string' ? JSON.parse(item.ia_decision) : item.ia_decision
+    const perfil     = typeof item.perfil      === 'string' ? JSON.parse(item.perfil)      : item.perfil      || {}
+    const rutina     = typeof item.rutina      === 'string' ? JSON.parse(item.rutina)      : item.rutina      || {}
+    const macros     = typeof item.macros      === 'string' ? JSON.parse(item.macros)      : item.macros      || {}
+    const ia_raw     = typeof item.ia_decision === 'string' ? JSON.parse(item.ia_decision) : item.ia_decision || null
 
-    // Usar ia_decision real si existe en el registro, sino reconstruir básico
+    const bmr  = perfil.bmr  ?? calcularBMR(perfil.peso, perfil.altura, perfil.edad, perfil.sexo)
+    const tdee = perfil.tdee ?? calcularTDEE(bmr, perfil.dias_disponibles)
+
     const ia_decision = ia_raw || {
       tipo_rutina:  rutina?.tipo_rutina,
       frecuencia:   perfil?.dias_disponibles,
@@ -67,9 +78,14 @@ export default function Historial() {
     }
 
     const resultado = {
-      id:        item.id,   // ← incluir id para verificación en Resultados.jsx
-      perfil,
-      nutricion:  macros,
+      id: item.id,
+      perfil: { ...perfil, bmr, tdee },
+      nutricion: {
+        calorias_objetivo: macros?.calorias_objetivo,
+        proteinas_g:       macros?.proteinas_g,
+        carbohidratos_g:   macros?.carbohidratos_g,
+        grasas_g:          macros?.grasas_g,
+      },
       ia_decision,
       rutina,
       progreso_simulado: generarProgreso(perfil?.objetivo),
@@ -79,7 +95,25 @@ export default function Historial() {
     navigate('/resultados')
   }
 
-  // Eliminar un plan del historial
+  const calcularBMR = (peso, altura_cm, edad, sexo) => {
+    if (!peso || !altura_cm || !edad || !sexo) return null
+    if (sexo === 'masculino') {
+      return Math.round((10 * peso) + (6.25 * altura_cm) - (5 * edad) + 5)
+    } else {
+      return Math.round((10 * peso) + (6.25 * altura_cm) - (5 * edad) - 161)
+    }
+  }
+
+  const calcularTDEE = (bmr, dias_activos) => {
+    if (!bmr || !dias_activos) return null
+    let factor
+    if (dias_activos <= 2)      factor = 1.375
+    else if (dias_activos <= 4) factor = 1.55
+    else if (dias_activos <= 6) factor = 1.725
+    else                        factor = 1.9
+    return Math.round(bmr * factor)
+  }
+
   const eliminarPlan = async (e, itemId) => {
     e.stopPropagation()
     if (!window.confirm('¿Eliminar este plan del historial?')) return
@@ -88,18 +122,16 @@ export default function Historial() {
     try {
       await gymAPI.deleteHistoryItem(itemId)
 
-      // Si el plan activo en localStorage es este, limpiarlo
       const localRaw = localStorage.getItem('gym_resultado')
       if (localRaw) {
         try {
           const local = JSON.parse(localRaw)
-          if (local?.id === itemId) {
+          if (Number(local?.id) === Number(itemId)) {
             localStorage.removeItem('gym_resultado')
           }
         } catch {/* */}
       }
 
-      // Actualizar lista local
       setItems(prev => prev.filter(i => i.id !== itemId))
       if (expanded !== null && items[expanded]?.id === itemId) {
         setExpanded(null)
@@ -111,7 +143,6 @@ export default function Historial() {
     }
   }
 
-  // Progreso simple para planes cargados desde historial
   const generarProgreso = (objetivo) => {
     const factores_grasa   = [0.9, 0.8, 0.7, 0.6, 0.55, 0.5, 0.45, 0.4]
     const factores_musculo = [0.15, 0.20, 0.25, 0.28, 0.28, 0.26, 0.25, 0.22]
@@ -193,7 +224,6 @@ export default function Historial() {
           </p>
         </div>
 
-        {/* Stats rápidas */}
         <div style={{ display: 'flex', gap: 12 }}>
           {[
             { label: 'Planes totales', value: items.length, icon: 'assignment' },
@@ -232,7 +262,6 @@ export default function Historial() {
           const fecha      = new Date(item.fecha)
           const fechaStr   = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
           const horaStr    = fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
-          // Número de plan para el usuario: posición en la lista (más reciente = #1)
           const numPlan    = items.length - i
 
           return (
@@ -258,7 +287,6 @@ export default function Historial() {
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'none'}
               >
-                {/* Número de plan */}
                 <div style={{
                   width: 44, height: 44,
                   background: isOpen ? 'rgba(198,241,53,0.12)' : 'var(--dark)',
@@ -276,7 +304,6 @@ export default function Historial() {
                   </span>
                 </div>
 
-                {/* Info principal */}
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
                     <span style={{
@@ -321,7 +348,6 @@ export default function Historial() {
                   </div>
                 </div>
 
-                {/* Chevron */}
                 <span className="material-icons-round" style={{
                   fontSize: 22,
                   color: isOpen ? 'var(--lime)' : 'var(--muted)',

@@ -1,9 +1,8 @@
 // frontend/src/pages/Resultados.jsx
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExplicacionCard from '../components/ExplicacionCard'
 import ProgressChart   from '../components/ProgressChart'
-import { gymAPI }      from '../services/api'
 
 /* ─── Helpers ─── */
 function parseSafe(v) {
@@ -88,83 +87,30 @@ const TABS = [
 
 /* ─── Página ─── */
 export default function Resultados() {
-  const navigate           = useNavigate()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Tab persiste en URL: ?tab=nutricion
   const tabParam = searchParams.get('tab')
-  const [tab,      setTab]     = useState(TABS.find(t => t.k === tabParam) ? tabParam : 'rutina')
-  const [openDia,  setOpenDia] = useState(0)
-  const [checking, setChecking] = useState(true)
-  const [data,     setData]    = useState(null)
+  const [tab,     setTab]    = useState(TABS.find(t => t.k === tabParam) ? tabParam : 'rutina')
+  const [openDia, setOpenDia] = useState(0)
+  const [data] = useState(() => {
+  const raw = localStorage.getItem('gym_resultado')
+  if (!raw) return null
 
-  // ── Verificar validez del plan al montar ──────────────────────────────────
-  // Si el historial del backend está vacío, el plan local no es válido.
-  useEffect(() => {
-    const raw = localStorage.getItem('gym_resultado')
-    if (!raw) {
-      setChecking(false)
-      return
-    }
+  try {
+    return JSON.parse(raw)
+  } catch {
+    localStorage.removeItem('gym_resultado')
+    return null
+  }
+})
 
-    let localData = null
-    try {
-      localData = JSON.parse(raw)
-    } catch {
-      localStorage.removeItem('gym_resultado')
-      setChecking(false)
-      return
-    }
-
-    // Si el resultado tiene un `id`, verificar que ese registro exista en la DB
-    if (localData?.id) {
-      gymAPI.getHistory()
-        .then(({ data: histData }) => {
-          const ids = (histData.historial || []).map(h => h.id)
-          if (!ids.includes(localData.id)) {
-            // El plan ya no existe en DB — limpiar localStorage
-            localStorage.removeItem('gym_resultado')
-            setData(null)
-          } else {
-            setData(localData)
-          }
-        })
-        .catch(() => {
-          // Si no se puede verificar (offline/error), mostrar igual
-          setData(localData)
-        })
-        .finally(() => setChecking(false))
-    } else {
-      // Plan sin id (legado o desde historial) — mostrar normalmente
-      setData(localData)
-      setChecking(false)
-    }
-  }, [])
-
-  // Sincronizar tab con URL
   const changeTab = (k) => {
     setTab(k)
     setSearchParams({ tab: k })
   }
 
-  if (checking) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: '320px', flexDirection: 'column', gap: 16,
-      }}>
-        <div style={{
-          width: 40, height: 40,
-          border: '3px solid var(--border)',
-          borderTopColor: 'var(--lime)',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-        }} />
-        <span style={{ fontSize: 14, color: 'var(--muted)' }}>Verificando tu plan...</span>
-      </div>
-    )
-  }
-
+  // ✅ Sin estado `checking` — la lectura de localStorage es instantánea
   if (!data) {
     return (
       <div style={{
@@ -212,11 +158,10 @@ export default function Resultados() {
 
   const objetivo = perfil.objetivo || ia.objetivo || 'mantener'
 
-  // Extracción robusta de explicaciones
   const explicaciones = (() => {
     const raw = ia.explicacion
     if (!raw) return []
-    if (Array.isArray(raw))     return raw.map(e => (typeof e === 'string' ? e.trim() : '')).filter(Boolean)
+    if (Array.isArray(raw))      return raw.map(e => (typeof e === 'string' ? e.trim() : '')).filter(Boolean)
     if (typeof raw === 'string') return raw.trim() === '' ? [] : raw.split('|').map(s => s.trim()).filter(Boolean)
     return []
   })()
@@ -534,9 +479,9 @@ export default function Resultados() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'BMR',  value: perfil.bmr,  sub: 'Calorías en reposo',     icon: 'bedtime', color: '#A78BFA' },
-                { label: 'TDEE', value: perfil.tdee, sub: 'Calorías con actividad',  icon: 'bolt',   color: '#F59E0B' },
-                { label: 'META', value: totalKcal,   sub: 'Objetivo diario',         icon: 'flag',   color: 'var(--lime)' },
+                { label: 'BMR',  value: perfil.bmr,  sub: 'Calorías en reposo',    icon: 'bedtime', color: '#A78BFA' },
+                { label: 'TDEE', value: perfil.tdee, sub: 'Calorías con actividad', icon: 'bolt',   color: '#F59E0B' },
+                { label: 'META', value: totalKcal,   sub: 'Objetivo diario',        icon: 'flag',   color: 'var(--lime)' },
               ].map(({ label, value, sub, icon, color }) => (
                 <div key={label} style={{
                   background: 'var(--card)', border: '1px solid var(--border)',
@@ -555,8 +500,8 @@ export default function Resultados() {
                     fontFamily: 'Barlow Condensed, sans-serif',
                     fontSize: 26, fontWeight: 700, color, lineHeight: 1,
                   }}>
-                    {value}
-                    <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'Barlow, sans-serif', fontWeight: 400, marginLeft: 4 }}>kcal</span>
+                    {value || '—'}
+                    {value && <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'Barlow, sans-serif', fontWeight: 400, marginLeft: 4 }}>kcal</span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>{sub}</div>
                 </div>
