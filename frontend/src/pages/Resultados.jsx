@@ -98,7 +98,6 @@ export default function Resultados() {
   const [tab,     setTab]     = useState('rutina')
 
   useEffect(() => {
-    // Si no hay resultado, redirigir al formulario
     if (!data) navigate('/formulario')
   }, [data, navigate])
 
@@ -115,22 +114,19 @@ export default function Resultados() {
   const objetivo = perfil.objetivo || ia.objetivo || 'mantener'
 
   // ──────────────────────────────────────────────────────────────────────────
-  // FIX CRÍTICO: Extracción correcta de explicaciones de Prolog
-  // El backend devuelve ia_decision.explicacion como:
-  //   - Array de strings (fallback Python)
-  //   - String con pipes separados (salida Prolog parseada)
-  //   - String vacío si Prolog falló
+  // Extracción robusta de explicaciones:
+  //   - Array de strings (fallback Python): se usa directamente
+  //   - String con pipes separados (salida parseada del motor): se divide
+  //   - String vacío o null: devuelve [] para usar fallback en ExplicacionCard
   // ──────────────────────────────────────────────────────────────────────────
   const explicaciones = (() => {
     const raw = ia.explicacion
     if (!raw) return []
     if (Array.isArray(raw)) {
-      // Caso 1: ya es array (fallback Python)
       return raw.map(e => (typeof e === 'string' ? e.trim() : '')).filter(Boolean)
     }
     if (typeof raw === 'string') {
       if (raw.trim() === '') return []
-      // Caso 2: string con pipes (salida Prolog)
       return raw.split('|').map(s => s.trim()).filter(Boolean)
     }
     return []
@@ -157,7 +153,7 @@ export default function Resultados() {
   const tabs = [
     { k: 'rutina',    l: 'Rutina Semanal',    icon: 'fitness_center' },
     { k: 'nutricion', l: 'Nutrición',          icon: 'restaurant'    },
-    { k: 'prolog',    l: 'Por qué este plan',  icon: 'lightbulb'     },
+    { k: 'razonamiento', l: 'Por qué este plan', icon: 'lightbulb'   },
     { k: 'progreso',  l: 'Progreso Estimado',  icon: 'show_chart'    },
   ]
 
@@ -209,10 +205,10 @@ export default function Resultados() {
       {/* ── Decisiones del sistema ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 22 }}>
         {[
-          { l: 'Tipo Rutina', v: tipoLabel,                                   icon: 'fitness_center', accent: 'var(--lime)'   },
-          { l: 'Frecuencia',  v: ia.frecuencia ? `${ia.frecuencia} días/sem` : '—', icon: 'calendar_today', accent: '#60A5FA' },
-          { l: 'Intensidad',  v: ia.intensidad || '—',                        icon: 'speed',          accent: 'var(--orange)' },
-          { l: 'Cardio',      v: ia.usa_cardio ? 'Incluido' : 'Sin cardio',   icon: 'directions_run', accent: ia.usa_cardio ? 'var(--lime)' : '#6B7280' },
+          { l: 'Tipo Rutina', v: tipoLabel,                                         icon: 'fitness_center', accent: 'var(--lime)'   },
+          { l: 'Frecuencia',  v: ia.frecuencia ? `${ia.frecuencia} días/sem` : '—', icon: 'calendar_today', accent: '#60A5FA'       },
+          { l: 'Intensidad',  v: ia.intensidad || '—',                              icon: 'speed',          accent: 'var(--orange)' },
+          { l: 'Cardio',      v: ia.usa_cardio ? 'Incluido' : 'Sin cardio',         icon: 'directions_run', accent: ia.usa_cardio ? 'var(--lime)' : '#6B7280' },
         ].map(({ l, v, icon, accent }) => (
           <div key={l} style={{
             background: `${accent}08`,
@@ -366,7 +362,7 @@ export default function Resultados() {
                         {(dia.ejercicios || []).map((ex, j) => {
                           const isCardio = ex.grupo === 'cardio'
                           const aColor   = isCardio ? '#60A5FA' : 'var(--lime)'
-                          // Soporte para camelCase (Scala) y snake_case (Python)
+                          // Soporte para camelCase (motor Scala) y snake_case (fallback Python)
                           const series   = ex.series
                           const reps     = ex.repeticiones || ex.reps
                           const descanso = ex.descanso_seg || ex.descansoSeg || 0
@@ -458,8 +454,8 @@ export default function Resultados() {
               <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 18 }}>
                 Calorías diarias según tu metabolismo y objetivo ({objetivo.replace(/_/g, ' ')})
               </p>
-              <MacroBar label="Proteínas"     valor={protG}   kcal={prot.kcal}   pct={prot.pct}   color="#60A5FA"      icon="egg_alt" />
-              <MacroBar label="Carbohidratos" valor={carbsG}  kcal={carbs.kcal}  pct={carbs.pct}  color="#F59E0B"      icon="grain"   />
+              <MacroBar label="Proteínas"     valor={protG}   kcal={prot.kcal}   pct={prot.pct}   color="#60A5FA"       icon="egg_alt" />
+              <MacroBar label="Carbohidratos" valor={carbsG}  kcal={carbs.kcal}  pct={carbs.pct}  color="#F59E0B"       icon="grain"   />
               <MacroBar label="Grasas"        valor={grasasG} kcal={grasas.kcal} pct={grasas.pct} color="var(--orange)" icon="opacity" />
             </div>
 
@@ -497,8 +493,8 @@ export default function Resultados() {
           </div>
         )}
 
-        {/* POR QUÉ ESTE PLAN (antes: PROLOG) */}
-        {tab === 'prolog' && (
+        {/* POR QUÉ ESTE PLAN */}
+        {tab === 'razonamiento' && (
           <ExplicacionCard explicaciones={explicaciones} />
         )}
 

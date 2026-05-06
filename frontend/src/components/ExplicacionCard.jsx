@@ -9,6 +9,18 @@ export default function ExplicacionCard({ explicaciones = [] }) {
     .map(e => (typeof e === 'string' ? e.trim() : ''))
     .filter(Boolean)
 
+  // Explicaciones de respaldo cuando el sistema no devuelve ninguna
+  const FALLBACK = [
+    'Tu nivel de entrenamiento determina la frecuencia y el tipo de rutina asignada para optimizar tu adaptación.',
+    'Tu objetivo principal define la distribución calórica diaria y la intensidad del trabajo en cada sesión.',
+    'Tu composición corporal (IMC y somatotipo) ajusta si se incluye cardio y con qué cargas debes entrenar.',
+    'Tu disponibilidad semanal define cuántos días y cómo se distribuyen los grupos musculares a lo largo de la semana.',
+    'Tu rango de edad influye en la intensidad máxima recomendada para proteger tu recuperación y prevenir lesiones.',
+  ]
+
+  const items = cleaned.length > 0 ? cleaned : FALLBACK
+  const esReal = cleaned.length > 0
+
   return (
     <div style={{
       background: 'rgba(198,241,53,0.04)',
@@ -51,8 +63,8 @@ export default function ExplicacionCard({ explicaciones = [] }) {
               POR QUÉ ESTE PLAN PARA TI
             </div>
             <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-              {cleaned.length > 0
-                ? `${cleaned.length} decisiones analizadas por el sistema`
+              {esReal
+                ? `${items.length} factores analizados de tu perfil`
                 : 'El sistema analizó tu perfil completo'}
             </div>
           </div>
@@ -68,78 +80,37 @@ export default function ExplicacionCard({ explicaciones = [] }) {
       {/* Contenido expandible */}
       {open && (
         <div style={{ padding: '0 22px 22px', borderTop: '1px solid rgba(198,241,53,0.1)' }}>
-          {cleaned.length > 0 ? (
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {cleaned.map((e, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    gap: '12px',
-                    alignItems: 'flex-start',
-                    padding: '12px 14px',
-                    background: 'rgba(255,255,255,0.02)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.04)',
-                  }}
-                >
-                  <div style={{
-                    width: '22px', height: '22px',
-                    background: 'rgba(198,241,53,0.15)',
-                    borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, marginTop: '1px',
-                  }}>
-                    <span style={{
-                      fontSize: '11px',
-                      fontFamily: 'Barlow Condensed, sans-serif',
-                      fontWeight: 700, color: 'var(--lime)',
-                    }}>{i + 1}</span>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'var(--muted2)', lineHeight: 1.6, margin: 0 }}>{e}</p>
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {items.map((e, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  alignItems: 'flex-start',
+                  padding: '12px 14px',
+                  background: 'rgba(255,255,255,0.02)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                }}
+              >
+                <div style={{
+                  width: '22px', height: '22px',
+                  background: 'rgba(198,241,53,0.15)',
+                  borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, marginTop: '1px',
+                }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontFamily: 'Barlow Condensed, sans-serif',
+                    fontWeight: 700, color: 'var(--lime)',
+                  }}>{i + 1}</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            // Fallback cuando no hay explicaciones del backend
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                'Tu nivel de entrenamiento determina la frecuencia y el tipo de rutina asignada.',
-                'Tu objetivo principal define la distribución calórica y la intensidad del trabajo.',
-                'Tu composición corporal (IMC y somatotipo) ajusta el cardio y las cargas.',
-                'Tu disponibilidad semanal define cuántos días y cómo se distribuyen los grupos musculares.',
-                'Tu rango de edad influye en la intensidad máxima recomendada para proteger tu recuperación.',
-              ].map((e, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    gap: '12px',
-                    alignItems: 'flex-start',
-                    padding: '12px 14px',
-                    background: 'rgba(255,255,255,0.02)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.04)',
-                  }}
-                >
-                  <div style={{
-                    width: '22px', height: '22px',
-                    background: 'rgba(198,241,53,0.15)',
-                    borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, marginTop: '1px',
-                  }}>
-                    <span style={{
-                      fontSize: '11px',
-                      fontFamily: 'Barlow Condensed, sans-serif',
-                      fontWeight: 700, color: 'var(--lime)',
-                    }}>{i + 1}</span>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'var(--muted2)', lineHeight: 1.6, margin: 0 }}>{e}</p>
-                </div>
-              ))}
-            </div>
-          )}
+                <p style={{ fontSize: '13px', color: 'var(--muted2)', lineHeight: 1.6, margin: 0 }}>{e}</p>
+              </div>
+            ))}
+          </div>
 
           <div style={{
             marginTop: '14px',

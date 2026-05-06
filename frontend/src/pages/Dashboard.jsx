@@ -32,7 +32,7 @@ const BENEFICIOS = [
 
 const FLUJO = [
   { num: '01', label: 'Ingresa tu perfil',   desc: 'Datos físicos y objetivo',      icon: 'person_outline'       },
-  { num: '02', label: 'El sistema analiza',  desc: 'Evaluación inteligente',        icon: 'psychology'           },
+  { num: '02', label: 'El sistema analiza',  desc: 'Evaluación de más de 25 variables', icon: 'psychology'       },
   { num: '03', label: 'Se genera tu plan',   desc: 'Rutina completa en segundos',   icon: 'auto_awesome'         },
   { num: '04', label: 'Entrena y progresa',  desc: 'Rutina + Nutrición + Progreso', icon: 'assignment_turned_in' },
 ]

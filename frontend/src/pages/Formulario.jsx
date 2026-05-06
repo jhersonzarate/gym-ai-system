@@ -34,7 +34,7 @@ function getImcInfo(imc) {
 }
 
 /* ─── Componente botón de selección ─── */
-function ChoiceButton({ active, onClick, icon, label, sub, accent = 'var(--gym-lime)' }) {
+function ChoiceButton({ active, onClick, icon, label, sub, accent = 'var(--lime)' }) {
   return (
     <button
       type="button"
@@ -43,19 +43,19 @@ function ChoiceButton({ active, onClick, icon, label, sub, accent = 'var(--gym-l
         flex: 1,
         padding: '13px 10px',
         borderRadius: 10,
-        border: active ? `1.5px solid ${accent}` : '1px solid var(--gym-border2)',
-        background: active ? `${accent}12` : 'var(--gym-dark)',
+        border: active ? `1.5px solid ${accent}` : '1px solid var(--border2)',
+        background: active ? `${accent}12` : 'var(--dark)',
         cursor: 'pointer',
         transition: 'all 0.15s',
         textAlign: 'center',
       }}
     >
-      <span className="material-icons-round" style={{ fontSize: 21, color: active ? accent : 'var(--gym-muted)', display: 'block', marginBottom: 5 }}>
+      <span className="material-icons-round" style={{ fontSize: 21, color: active ? accent : 'var(--muted)', display: 'block', marginBottom: 5 }}>
         {icon}
       </span>
-      <div style={{ fontSize: 13, fontWeight: 600, color: active ? 'var(--gym-text)' : 'var(--gym-muted2)', marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: active ? 'var(--text)' : 'var(--muted2)', marginBottom: 2 }}>{label}</div>
       {sub && (
-        <div style={{ fontSize: 11, color: active ? accent : 'var(--gym-muted)', fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.03em' }}>
+        <div style={{ fontSize: 11, color: active ? accent : 'var(--muted)', fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.03em' }}>
           {sub}
         </div>
       )}
@@ -67,11 +67,11 @@ function ChoiceButton({ active, onClick, icon, label, sub, accent = 'var(--gym-l
 function Field({ label, hint, children }) {
   return (
     <div>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--gym-muted2)', marginBottom: 7 }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--muted2)', marginBottom: 7 }}>
         {label}
       </label>
       {children}
-      {hint && <p style={{ fontSize: 11, color: 'var(--gym-muted)', marginTop: 5 }}>{hint}</p>}
+      {hint && <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>{hint}</p>}
     </div>
   )
 }
@@ -83,7 +83,7 @@ function NumInput({ value, onChange, placeholder, icon, min, max, step = '0.1', 
       {icon && (
         <span className="material-icons-round" style={{
           position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-          fontSize: 17, color: 'var(--gym-muted)', pointerEvents: 'none',
+          fontSize: 17, color: 'var(--muted)', pointerEvents: 'none',
         }}>{icon}</span>
       )}
       <input
@@ -101,7 +101,7 @@ function NumInput({ value, onChange, placeholder, icon, min, max, step = '0.1', 
       {unit && (
         <span style={{
           position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-          fontSize: 12, color: 'var(--gym-muted)',
+          fontSize: 12, color: 'var(--muted)',
           fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600,
         }}>{unit}</span>
       )}
@@ -110,14 +110,14 @@ function NumInput({ value, onChange, placeholder, icon, min, max, step = '0.1', 
 }
 
 /* ─── Sección con header ─── */
-function Section({ icon, iconColor = 'var(--gym-lime)', iconBg = 'rgba(198,241,53,0.1)', title, children }) {
+function Section({ icon, iconColor = 'var(--lime)', iconBg = 'rgba(198,241,53,0.1)', title, children }) {
   return (
-    <div style={{ background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: 12, padding: 22 }}>
+    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 22 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
         <div style={{ width: 30, height: 30, background: iconBg, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span className="material-icons-round" style={{ fontSize: 16, color: iconColor }}>{icon}</span>
         </div>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--gym-text)' }}>{title}</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{title}</h2>
       </div>
       {children}
     </div>
@@ -159,12 +159,16 @@ export default function Formulario() {
     e.preventDefault()
     setError('')
 
-    if (!alturaCm) {
-      setError('Ingresa la altura en metros con punto decimal. Ejemplo: 1.75')
+    if (!form.edad || parseInt(form.edad) < 15 || parseInt(form.edad) > 80) {
+      setError('La edad debe estar entre 15 y 80 años.')
       return
     }
-    if (parseInt(form.edad) < 15 || parseInt(form.edad) > 80) {
-      setError('La edad debe estar entre 15 y 80 años.')
+    if (!form.peso || parseFloat(form.peso) < 30 || parseFloat(form.peso) > 250) {
+      setError('Ingresa un peso válido entre 30 y 250 kg.')
+      return
+    }
+    if (!alturaCm) {
+      setError('Ingresa la altura en metros con punto decimal. Ejemplo: 1.75')
       return
     }
 
@@ -206,11 +210,11 @@ export default function Formulario() {
       {/* Header */}
       <div style={{ marginBottom: 26 }}>
         <div className="label-tag" style={{ marginBottom: 7 }}>Análisis de perfil</div>
-        <h1 className="font-condensed" style={{ fontSize: 28, fontWeight: 700, letterSpacing: '0.02em' }}>
+        <h1 className="font-condensed" style={{ fontSize: 28, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--text)' }}>
           Configura tu plan personalizado
         </h1>
-        <p style={{ color: 'var(--gym-muted)', marginTop: 5, fontSize: 14 }}>
-          El motor Prolog analizará estos datos para determinar tu rutina óptima
+        <p style={{ color: 'var(--muted)', marginTop: 5, fontSize: 14 }}>
+          Completa tu perfil físico y el sistema generará tu rutina óptima
         </p>
       </div>
 
@@ -235,7 +239,7 @@ export default function Formulario() {
                 </Field>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--gym-muted2)', marginBottom: 7 }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--muted2)', marginBottom: 7 }}>
                     Sexo biológico
                   </label>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -246,15 +250,15 @@ export default function Formulario() {
                         onClick={() => set('sexo', opt.v)}
                         style={{
                           flex: 1, padding: '10px 10px', borderRadius: 8,
-                          border: form.sexo === opt.v ? '1.5px solid var(--gym-lime)' : '1px solid var(--gym-border2)',
-                          background: form.sexo === opt.v ? 'rgba(198,241,53,0.09)' : 'var(--gym-dark)',
+                          border: form.sexo === opt.v ? '1.5px solid var(--lime)' : '1px solid var(--border2)',
+                          background: form.sexo === opt.v ? 'rgba(198,241,53,0.09)' : 'var(--dark)',
                           cursor: 'pointer',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                           transition: 'all 0.13s',
                         }}
                       >
-                        <span className="material-icons-round" style={{ fontSize: 16, color: form.sexo === opt.v ? 'var(--gym-lime)' : 'var(--gym-muted)' }}>{opt.icon}</span>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: form.sexo === opt.v ? 'var(--gym-text)' : 'var(--gym-muted2)' }}>{opt.l}</span>
+                        <span className="material-icons-round" style={{ fontSize: 16, color: form.sexo === opt.v ? 'var(--lime)' : 'var(--muted)' }}>{opt.icon}</span>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: form.sexo === opt.v ? 'var(--text)' : 'var(--muted2)' }}>{opt.l}</span>
                       </button>
                     ))}
                   </div>
@@ -271,7 +275,7 @@ export default function Formulario() {
                   />
                 </Field>
 
-                <Field label="Altura" hint="En metros con punto: 1.75 — no ingresar cm directamente">
+                <Field label="Altura" hint="En metros con punto decimal: 1.75">
                   <NumInput
                     value={form.altura}
                     onChange={e => set('altura', e.target.value)}
@@ -301,7 +305,7 @@ export default function Formulario() {
             </Section>
 
             {/* Objetivo */}
-            <Section icon="flag" iconColor="var(--gym-orange)" iconBg="rgba(242,101,34,0.1)" title="Objetivo principal">
+            <Section icon="flag" iconColor="var(--orange)" iconBg="rgba(242,101,34,0.1)" title="Objetivo principal">
               <div style={{ display: 'flex', gap: 8 }}>
                 {OBJETIVO_OPTS.map(opt => (
                   <ChoiceButton
@@ -319,8 +323,8 @@ export default function Formulario() {
 
             {/* Días disponibles */}
             <Section icon="calendar_today" iconColor="#A78BFA" iconBg="rgba(167,139,250,0.1)" title="Días disponibles por semana">
-              <p style={{ fontSize: 12, color: 'var(--gym-muted)', marginBottom: 14 }}>
-                Prolog ajustará la frecuencia y tipo de rutina según tu nivel y días disponibles.
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>
+                El sistema ajustará la frecuencia y tipo de rutina según tu nivel y disponibilidad.
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 {DIAS_OPTS.map(d => {
@@ -332,13 +336,21 @@ export default function Formulario() {
                       onClick={() => set('dias_disponibles', d)}
                       style={{
                         flex: 1, padding: '13px 8px', borderRadius: 8, textAlign: 'center',
-                        border: active ? '1.5px solid #A78BFA' : '1px solid var(--gym-border2)',
-                        background: active ? 'rgba(167,139,250,0.1)' : 'var(--gym-dark)',
+                        border: active ? '1.5px solid #A78BFA' : '1px solid var(--border2)',
+                        background: active ? 'rgba(167,139,250,0.1)' : 'var(--dark)',
                         cursor: 'pointer', transition: 'all 0.13s',
                       }}
                     >
-                      <div className="font-condensed" style={{ fontSize: 24, fontWeight: 700, color: active ? '#A78BFA' : 'var(--gym-muted)', lineHeight: 1 }}>{d}</div>
-                      <div style={{ fontSize: 10, color: active ? 'var(--gym-text)' : 'var(--gym-muted)', marginTop: 4, fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      <div style={{
+                        fontFamily: 'Barlow Condensed, sans-serif',
+                        fontSize: 24, fontWeight: 700,
+                        color: active ? '#A78BFA' : 'var(--muted)', lineHeight: 1,
+                      }}>{d}</div>
+                      <div style={{
+                        fontSize: 10, color: active ? 'var(--text)' : 'var(--muted)',
+                        marginTop: 4, fontFamily: 'Barlow Condensed, sans-serif',
+                        fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                      }}>
                         {d === 1 ? 'día' : 'días'}
                       </div>
                     </button>
@@ -354,15 +366,18 @@ export default function Formulario() {
             {/* IMC en tiempo real */}
             {imcVal && imcInfo && (
               <div style={{
-                background: 'var(--gym-card)',
+                background: 'var(--card)',
                 border: `1px solid ${imcInfo.color}30`,
                 borderRadius: 12, padding: 18,
                 animation: 'fadeUp 0.25s ease forwards',
               }}>
                 <div className="label-tag" style={{ marginBottom: 10 }}>IMC calculado</div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 10 }}>
-                  <span className="font-display" style={{ fontSize: 50, color: imcInfo.color, lineHeight: 1 }}>{imcVal}</span>
-                  <span style={{ fontSize: 13, color: 'var(--gym-muted)', marginBottom: 7 }}>kg/m²</span>
+                  <span style={{
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    fontSize: 50, color: imcInfo.color, lineHeight: 1, letterSpacing: '0.04em',
+                  }}>{imcVal}</span>
+                  <span style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 7 }}>kg/m²</span>
                 </div>
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -371,7 +386,10 @@ export default function Formulario() {
                   border: `1px solid ${imcInfo.color}28`,
                 }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: imcInfo.color }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: imcInfo.color, fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.06em' }}>
+                  <span style={{
+                    fontSize: 12, fontWeight: 600, color: imcInfo.color,
+                    fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.06em',
+                  }}>
                     {imcInfo.label}
                   </span>
                 </div>
@@ -379,7 +397,7 @@ export default function Formulario() {
             )}
 
             {/* Resumen del perfil */}
-            <div style={{ background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: 12, padding: 18 }}>
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 18 }}>
               <div className="label-tag" style={{ marginBottom: 14 }}>Resumen del perfil</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
@@ -387,14 +405,14 @@ export default function Formulario() {
                   { l: 'Objetivo',   v: form.objetivo?.replace(/_/g,' '), icon: 'flag'           },
                   { l: 'Días/sem',   v: `${form.dias_disponibles} días`,  icon: 'calendar_today' },
                   { l: 'Sexo',       v: form.sexo,                        icon: 'person'         },
-                  { l: 'Altura',     v: alturaCm ? `${alturaCm} cm` : '—', icon: 'height'        },
+                  { l: 'Altura',     v: alturaCm ? `${alturaCm} cm` : '—', icon: 'height'       },
                 ].map(({ l, v, icon }) => (
                   <div key={l} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--gym-muted)', fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: 'var(--muted)', fontSize: 13 }}>
                       <span className="material-icons-round" style={{ fontSize: 14 }}>{icon}</span>
                       {l}
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gym-text)', textTransform: 'capitalize' }}>{v || '—'}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', textTransform: 'capitalize' }}>{v || '—'}</span>
                   </div>
                 ))}
               </div>
@@ -408,7 +426,7 @@ export default function Formulario() {
                 borderRadius: 10, padding: '12px 14px',
                 display: 'flex', gap: 9, alignItems: 'flex-start',
               }}>
-                <span className="material-icons-round" style={{ fontSize: 17, color: 'var(--gym-red)', flexShrink: 0, marginTop: 1 }}>error_outline</span>
+                <span className="material-icons-round" style={{ fontSize: 17, color: 'var(--red)', flexShrink: 0, marginTop: 1 }}>error_outline</span>
                 <span style={{ fontSize: 13, color: '#FCA5A5', lineHeight: 1.5 }}>{error}</span>
               </div>
             )}
@@ -423,19 +441,19 @@ export default function Formulario() {
               {loading ? (
                 <>
                   <span className="material-icons-round animate-spin" style={{ fontSize: 19 }}>refresh</span>
-                  Analizando con IA...
+                  Analizando tu perfil...
                 </>
               ) : (
                 <>
                   <span className="material-icons-round" style={{ fontSize: 19 }}>auto_awesome</span>
-                  Generar Plan con IA
+                  Generar mi plan
                 </>
               )}
             </button>
 
             {!loading && (
-              <p style={{ fontSize: 11, color: 'var(--gym-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-                Motor Prolog con 25+ reglas procesará tu perfil y Scala construirá tu rutina completa.
+              <p style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6 }}>
+                El sistema analizará más de 25 variables de tu perfil para crear un plan completamente personalizado.
               </p>
             )}
           </div>

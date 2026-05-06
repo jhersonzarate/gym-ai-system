@@ -105,7 +105,7 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Info card sin mencionar tecnologías */}
+      {/* Info card — describe funciones sin mencionar tecnologías internas */}
       <div style={{
         margin: '0 12px 16px',
         padding: '14px 16px',
@@ -122,10 +122,10 @@ export default function Sidebar() {
           SISTEMA INTELIGENTE
         </div>
         {[
-          ['Motor de reglas',    'Análisis de perfil'],
-          ['Generador',         'Rutinas dinámicas'],
-          ['Calculadora',       'Macros y calorías'],
-        ].map(([label, role]) => (
+          ['Análisis de perfil',   'Motor de reglas'   ],
+          ['Rutinas dinámicas',    'Generador propio'   ],
+          ['Macros y calorías',    'Cálculo científico' ],
+        ].map(([role, label]) => (
           <div key={label} style={{
             display: 'flex', justifyContent: 'space-between',
             alignItems: 'center', marginBottom: '5px',
@@ -134,8 +134,8 @@ export default function Sidebar() {
               fontSize: '12px',
               fontFamily: 'Barlow Condensed, sans-serif',
               fontWeight: 600, color: 'var(--text)',
-            }}>{label}</span>
-            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{role}</span>
+            }}>{role}</span>
+            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{label}</span>
           </div>
         ))}
       </div>
