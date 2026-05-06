@@ -3,32 +3,38 @@ import subprocess
 import os
 import json
 import re
+import tempfile
 
 PROLOG_DIR = os.path.join(os.path.dirname(__file__), "../prolog")
+# Normalizar separadores para cualquier OS
+PROLOG_DIR = os.path.normpath(PROLOG_DIR)
 
 def consultar_prolog(perfil: dict) -> dict:
     """
     Genera una consulta Prolog a partir del perfil del usuario
     y ejecuta el motor de inferencia.
     """
-    edad = perfil["edad"]
-    nivel = perfil["nivel"]
-    objetivo = perfil["objetivo"]
-    dias = perfil["dias_disponibles"]
-    imc_cat = perfil["imc_categoria"]
+    edad      = perfil["edad"]
+    nivel     = perfil["nivel"]
+    objetivo  = perfil["objetivo"]
+    dias      = perfil["dias_disponibles"]
+    imc_cat   = perfil["imc_categoria"]
     somatotipo = perfil["somatotipo"]
+
+    # Normalizar paths para Prolog (usar / en lugar de \ para compatibilidad)
+    prolog_dir_norm = PROLOG_DIR.replace("\\", "/")
 
     # Construir consulta dinámica
     query = f"""
-:- consult('{PROLOG_DIR}/hechos.pl').
-:- consult('{PROLOG_DIR}/reglas.pl').
-:- consult('{PROLOG_DIR}/inferencia.pl').
+:- consult('{prolog_dir_norm}/hechos.pl').
+:- consult('{prolog_dir_norm}/reglas.pl').
+:- consult('{prolog_dir_norm}/inferencia.pl').
 
-:- 
+:-
     recomendar(
-        {edad}, '{nivel}', '{objetivo}', {dias}, 
+        {edad}, '{nivel}', '{objetivo}', {dias},
         '{imc_cat}', '{somatotipo}',
-        Frecuencia, TipoRutina, Intensidad, 
+        Frecuencia, TipoRutina, Intensidad,
         UsaCardio, Explicacion
     ),
     format('FRECUENCIA:~w~n', [Frecuencia]),
@@ -39,41 +45,66 @@ def consultar_prolog(perfil: dict) -> dict:
     halt.
 """
 
-    # Guardar query temporal
-    query_file = "/tmp/gym_query.pl"
+    # Usar tempfile para compatibilidad Windows/Linux/Mac
     try:
-        with open(query_file, "w") as f:
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.pl', delete=False, encoding='utf-8'
+        ) as f:
             f.write(query)
-    except:
+            query_file = f.name
+    except Exception:
         return _resultado_fallback(perfil)
 
     try:
+        # Normalizar path del archivo temporal para Prolog
+        query_file_norm = query_file.replace("\\", "/")
+
         result = subprocess.run(
-            ["swipl", "-g", "halt", "-t", f"consult('{query_file}')"],
+            ["swipl", "-g", "halt", "-t", f"consult('{query_file_norm}')"],
             capture_output=True,
             text=True,
             timeout=10
         )
         output = result.stdout + result.stderr
-        
+
+        # Limpiar archivo temporal
+        try:
+            os.unlink(query_file)
+        except Exception:
+            pass
+
         # Si hay error o no hay salida, usar fallback
         if result.returncode != 0 or not output.strip():
             return _resultado_fallback(perfil)
-        
+
         parsed = _parsear_salida_prolog(output)
-        
+
         # Si no se parsearon explicaciones, usar fallback
-        if not parsed.get("explicacion") or (isinstance(parsed.get("explicacion"), list) and len(parsed["explicacion"]) == 0):
+        if not parsed.get("explicacion") or len(parsed["explicacion"]) == 0:
             return _resultado_fallback(perfil)
-        
+
         return parsed
+
     except subprocess.TimeoutExpired:
+        try:
+            os.unlink(query_file)
+        except Exception:
+            pass
         return _resultado_fallback(perfil)
     except FileNotFoundError:
-        # SWI-Prolog no instalado, usar fallback
+        # SWI-Prolog no instalado
+        try:
+            os.unlink(query_file)
+        except Exception:
+            pass
         return _resultado_fallback(perfil)
     except Exception:
+        try:
+            os.unlink(query_file)
+        except Exception:
+            pass
         return _resultado_fallback(perfil)
+
 
 def _parsear_salida_prolog(output: str) -> dict:
     resultado = {
@@ -83,18 +114,18 @@ def _parsear_salida_prolog(output: str) -> dict:
         "usa_cardio": True,
         "explicacion": []
     }
-    
+
     explicaciones_found = False
-    
+
     for linea in output.split("\n"):
         linea = linea.strip()
         if not linea:
             continue
-            
+
         if linea.startswith("FRECUENCIA:"):
             try:
                 resultado["frecuencia"] = int(linea.split(":")[1].strip())
-            except:
+            except Exception:
                 pass
         elif linea.startswith("TIPO:"):
             tipo = linea.split(":", 1)[1].strip()
@@ -110,80 +141,116 @@ def _parsear_salida_prolog(output: str) -> dict:
         elif linea.startswith("EXPLICACION:"):
             texto = linea.split(":", 1)[1].strip()
             if texto:
-                # Filtrar explicaciones vacías
                 explicaciones_found = True
                 exps = [e.strip() for e in texto.split("|") if e.strip()]
                 resultado["explicacion"] = exps
-    
-    # Si no se encontraron explicaciones, devolver resultado incompleto 
-    # para que el caller sepa que debe usar fallback
+
     if not explicaciones_found:
         resultado["explicacion"] = []
-    
+
     return resultado
 
+
 def _resultado_fallback(perfil: dict) -> dict:
-    """Lógica fallback en Python si Prolog no está disponible"""
-    nivel = perfil.get("nivel", "principiante")
-    objetivo = perfil.get("objetivo", "mantener")
-    dias = perfil.get("dias_disponibles", 3)
-    imc_cat = perfil.get("imc_categoria", "normal")
+    """Lógica fallback en Python si Prolog no está disponible o instalado."""
+    nivel      = perfil.get("nivel", "principiante")
+    objetivo   = perfil.get("objetivo", "mantener")
+    dias       = perfil.get("dias_disponibles", 3)
+    imc_cat    = perfil.get("imc_categoria", "normal")
+    somatotipo = perfil.get("somatotipo", "mesomorfo")
+    edad       = perfil.get("edad", 25)
 
-    tipo = "fullbody"
-    frecuencia = min(dias, 4)
-    intensidad = "moderada"
-    usa_cardio = False
-    explicaciones = []
-
+    # Determinar tipo y frecuencia
     if nivel == "principiante":
         tipo = "fullbody"
+        frecuencia = min(dias, 3)
         intensidad = "baja"
-        explicaciones.append("Nivel principiante: se prioriza adaptación neuromuscular y técnica de movimiento")
-        explicaciones.append("Disponibilidad de {0} días — se asignan {1} sesiones semanales".format(dias, frecuencia))
     elif nivel == "intermedio":
-        tipo = "upper_lower" if dias >= 4 else "fullbody"
+        if dias <= 3:
+            tipo = "fullbody"
+        elif dias <= 5:
+            tipo = "upper_lower"
+        else:
+            tipo = "torso_pierna"
+        frecuencia = min(dias, 5)
         intensidad = "moderada"
-        explicaciones.append("Nivel intermedio: el cuerpo puede manejar mayor volumen e intensidad de entrenamiento")
-        explicaciones.append("Disponibilidad de {0} días — se asignan {1} sesiones semanales".format(dias, frecuencia))
     else:
-        tipo = "ppl" if dias >= 5 else "upper_lower"
+        if dias <= 4:
+            tipo = "upper_lower"
+        elif dias >= 6 and objetivo == "ganar_musculo":
+            tipo = "especializado"
+        else:
+            tipo = "ppl"
+        frecuencia = min(dias, 6)
         intensidad = "alta"
-        explicaciones.append("Nivel avanzado: se aplica especialización y periodización para romper mesetas")
-        explicaciones.append("Disponibilidad de {0} días — se asignan {1} sesiones semanales".format(dias, frecuencia))
+
+    # Ajuste por IMC
+    usa_cardio = False
+    if imc_cat == "obesidad":
+        intensidad = "baja"
+        usa_cardio = True
+        frecuencia = min(frecuencia, 3)
+    elif imc_cat == "sobrepeso":
+        usa_cardio = True
 
     if objetivo == "perder_grasa":
         usa_cardio = True
-        explicaciones.append("Objetivo perder grasa: se genera déficit calórico combinando ejercicio y nutrición")
-    elif objetivo == "ganar_musculo":
+    elif objetivo == "ganar_musculo" and imc_cat in ("normal", "bajo_peso"):
         usa_cardio = False
-        explicaciones.append("Objetivo ganar músculo: superávit calórico moderado con énfasis en sobrecarga progresiva")
-    else:
-        explicaciones.append("Objetivo mantenimiento: equilibrio entre ingesta y gasto energético")
 
-    if imc_cat == "bajo_peso":
-        explicaciones.append("IMC bajo: se prioriza ganancia de masa muscular y densidad calórica")
-    elif imc_cat == "normal":
-        explicaciones.append("IMC normal: condición física óptima para cualquier objetivo")
-    elif imc_cat == "sobrepeso":
-        explicaciones.append("IMC sobrepeso: se incluye cardio moderado y control calórico")
-    elif imc_cat == "obesidad":
-        intensidad = "baja"
+    # Ajuste por edad
+    if edad >= 50:
+        if intensidad == "muy_alta":
+            intensidad = "alta"
+        elif intensidad == "alta":
+            intensidad = "moderada"
+
+    # Ajuste por somatotipo
+    if somatotipo == "endomorfo" and not usa_cardio:
         usa_cardio = True
-        explicaciones.append("IMC obesidad: intensidad reducida para proteger articulaciones y corazón")
 
-    if tipo == "fullbody":
-        explicaciones.append("Rutina Full Body: todos los grupos musculares en cada sesión, ideal para baja frecuencia")
-    elif tipo == "upper_lower":
-        explicaciones.append("Rutina Upper/Lower: división por tren superior e inferior, mayor volumen por grupo")
-    elif tipo == "ppl":
-        explicaciones.append("Rutina Push/Pull/Legs: máxima especialización por patrón de movimiento")
+    # Generar explicaciones coherentes
+    explicaciones = []
 
-    if intensidad == "baja":
-        explicaciones.append("Intensidad baja: cargas moderadas, técnica perfecta, recuperación prioritaria")
-    elif intensidad == "moderada":
-        explicaciones.append("Intensidad moderada: rango hipertrofia 8-12 reps, esfuerzo controlado")
-    elif intensidad == "alta":
-        explicaciones.append("Intensidad alta: cargas pesadas 5-8 reps, fuerza-hipertrofia combinada")
+    nivel_map = {
+        "principiante": "Nivel principiante: se prioriza adaptación neuromuscular y técnica de movimiento",
+        "intermedio":   "Nivel intermedio: el cuerpo puede manejar mayor volumen e intensidad de entrenamiento",
+        "avanzado":     "Nivel avanzado: se aplica especialización y periodización para romper mesetas",
+    }
+    explicaciones.append(nivel_map.get(nivel, ""))
+
+    obj_map = {
+        "perder_grasa":  "Objetivo perder grasa: se genera déficit calórico combinando ejercicio y nutrición",
+        "ganar_musculo": "Objetivo ganar músculo: superávit calórico moderado con énfasis en sobrecarga progresiva",
+        "mantener":      "Objetivo mantenimiento: equilibrio entre ingesta y gasto energético",
+    }
+    explicaciones.append(obj_map.get(objetivo, ""))
+    explicaciones.append(f"Disponibilidad de {dias} días — se asignan {frecuencia} sesiones semanales")
+
+    imc_map = {
+        "bajo_peso": "IMC bajo: se prioriza ganancia de masa muscular y densidad calórica",
+        "normal":    "IMC normal: condición física óptima para cualquier objetivo",
+        "sobrepeso": "IMC sobrepeso: se incluye cardio moderado y control calórico",
+        "obesidad":  "IMC obesidad: intensidad reducida para proteger articulaciones y corazón",
+    }
+    explicaciones.append(imc_map.get(imc_cat, ""))
+
+    tipo_map = {
+        "fullbody":      "Rutina Full Body: todos los grupos musculares en cada sesión, ideal para baja frecuencia",
+        "upper_lower":   "Rutina Upper/Lower: división por tren superior e inferior, mayor volumen por grupo",
+        "ppl":           "Rutina Push/Pull/Legs: máxima especialización por patrón de movimiento",
+        "torso_pierna":  "Rutina Torso/Pierna: híbrido eficiente para frecuencia media-alta",
+        "especializado": "Rutina Especializada: días dedicados por grupo muscular, máximo volumen",
+    }
+    explicaciones.append(tipo_map.get(tipo, ""))
+
+    int_map = {
+        "baja":     "Intensidad baja: cargas moderadas, técnica perfecta, recuperación prioritaria",
+        "moderada": "Intensidad moderada: rango hipertrofia 8-12 reps, esfuerzo controlado",
+        "alta":     "Intensidad alta: cargas pesadas 5-8 reps, fuerza-hipertrofia combinada",
+        "muy_alta": "Intensidad muy alta: trabajo de fuerza máxima y potencia muscular",
+    }
+    explicaciones.append(int_map.get(intensidad, ""))
 
     if usa_cardio:
         if objetivo == "perder_grasa":
@@ -195,6 +262,25 @@ def _resultado_fallback(perfil: dict) -> dict:
             explicaciones.append("Cardio omitido: se maximiza superávit calórico para síntesis proteica muscular")
         else:
             explicaciones.append("Cardio no prioritario: el enfoque está en fuerza y composición corporal")
+
+    soma_map = {
+        "ectomorfo": "Somatotipo ectomorfo: metabolismo rápido — alta ingesta calórica y volumen moderado",
+        "mesomorfo": "Somatotipo mesomorfo: respuesta muscular óptima — programa estándar efectivo",
+        "endomorfo": "Somatotipo endomorfo: tendencia a acumular grasa — cardio extra y déficit controlado",
+    }
+    explicaciones.append(soma_map.get(somatotipo, ""))
+
+    edad_cat = "joven" if edad < 30 else ("adulto" if edad < 50 else "mayor")
+    edad_map = {
+        "joven":  "Rango etario joven: capacidad de recuperación alta, puede tolerar mayor frecuencia",
+        "adulto": "Rango etario adulto: equilibrio entre carga y recuperación, descanso prioritario",
+        "mayor":  "Rango etario mayor: se reduce intensidad máxima para proteger sistema osteoarticular",
+    }
+    explicaciones.append(edad_map.get(edad_cat, ""))
+
+    # Filtrar vacíos
+    explicaciones = [e for e in explicaciones if e]
+
     return {
         "frecuencia": frecuencia,
         "tipo_rutina": tipo,

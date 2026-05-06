@@ -31,10 +31,10 @@ const BENEFICIOS = [
 ]
 
 const FLUJO = [
-  { num: '01', label: 'Ingresa tu perfil',   desc: 'Datos físicos y objetivo',      icon: 'person_outline'       },
-  { num: '02', label: 'El sistema analiza',  desc: 'Evaluación de más de 25 variables', icon: 'psychology'       },
-  { num: '03', label: 'Se genera tu plan',   desc: 'Rutina completa en segundos',   icon: 'auto_awesome'         },
-  { num: '04', label: 'Entrena y progresa',  desc: 'Rutina + Nutrición + Progreso', icon: 'assignment_turned_in' },
+  { num: '01', label: 'Ingresa tu perfil',   desc: 'Datos físicos y objetivo',          icon: 'person_outline'       },
+  { num: '02', label: 'El sistema analiza',  desc: 'Evaluación de más de 25 variables', icon: 'psychology'           },
+  { num: '03', label: 'Se genera tu plan',   desc: 'Rutina completa en segundos',       icon: 'auto_awesome'         },
+  { num: '04', label: 'Entrena y progresa',  desc: 'Rutina + Nutrición + Progreso',     icon: 'assignment_turned_in' },
 ]
 
 const OBJETIVO_META = {
@@ -46,23 +46,130 @@ const OBJETIVO_META = {
 export default function Dashboard() {
   const navigate = useNavigate()
   const nombre   = localStorage.getItem('gym_nombre') || 'Atleta'
-  const [ultimoPlan, setUltimoPlan] = useState(() => {
-    const saved = (() => {
-      try { return JSON.parse(localStorage.getItem('gym_saved_results') || '[]') } catch { return [] }
-    })()
-    return saved.length > 0 ? saved[0] : null
-  })
+  const [ultimoPlan, setUltimoPlan] = useState(null)
+  const [loadingPlan, setLoadingPlan] = useState(true)
 
   useEffect(() => {
-    if (!ultimoPlan) {
-      gymAPI.getHistory()
-        .then(({ data }) => {
-          const items = data.historial || []
-          if (items.length > 0) setUltimoPlan(items[0])
-        })
-        .catch(() => {})
+    // Siempre verificar contra el backend para evitar mostrar planes borrados
+    gymAPI.getHistory()
+      .then(({ data }) => {
+        const items = data.historial || []
+
+        if (items.length === 0) {
+          // DB vacía: limpiar cualquier caché local de planes
+          localStorage.removeItem('gym_resultado')
+          localStorage.removeItem('gym_saved_results')
+          setUltimoPlan(null)
+          return
+        }
+
+        // Tomar el plan más reciente del backend
+        const ultimo = items[0]
+        setUltimoPlan(ultimo)
+
+        // Sincronizar: si el localStorage tiene un plan con id diferente al más reciente, actualizarlo
+        const localRaw = localStorage.getItem('gym_resultado')
+        if (localRaw) {
+          try {
+            const local = JSON.parse(localRaw)
+            const ids = items.map(h => h.id)
+            // Si el plan local ya no existe en la DB, limpiarlo
+            if (local?.id && !ids.includes(local.id)) {
+              localStorage.removeItem('gym_resultado')
+            }
+          } catch {
+            localStorage.removeItem('gym_resultado')
+          }
+        }
+      })
+      .catch(() => {
+        // Si falla la red, mostrar el plan local si existe
+        const localRaw = localStorage.getItem('gym_resultado')
+        if (localRaw) {
+          try {
+            setUltimoPlan({ _fromCache: true, ...JSON.parse(localRaw) })
+          } catch {
+            setUltimoPlan(null)
+          }
+        }
+      })
+      .finally(() => setLoadingPlan(false))
+  }, [])
+
+  // Renderizar el banner del último plan
+  const renderUltimoPlan = () => {
+    if (loadingPlan) return null
+    if (!ultimoPlan) return null
+
+    // Soporte para objeto del backend (tiene perfil/rutina/macros como campos)
+    // o para objeto del localStorage (puede tener estructura diferente)
+    const perfil  = ultimoPlan._fromCache
+      ? (ultimoPlan.perfil || {})
+      : (typeof ultimoPlan.perfil  === 'string' ? JSON.parse(ultimoPlan.perfil)  : (ultimoPlan.perfil  || {}))
+    const macros  = ultimoPlan._fromCache
+      ? (ultimoPlan.nutricion || {})
+      : (typeof ultimoPlan.macros  === 'string' ? JSON.parse(ultimoPlan.macros)  : (ultimoPlan.macros  || {}))
+    const rutina  = ultimoPlan._fromCache
+      ? (ultimoPlan.rutina || {})
+      : (typeof ultimoPlan.rutina  === 'string' ? JSON.parse(ultimoPlan.rutina)  : (ultimoPlan.rutina  || {}))
+
+    const objetivo = perfil.objetivo || 'mantener'
+    const objMeta  = OBJETIVO_META[objetivo] || OBJETIVO_META.mantener
+
+    const tipoMap = {
+      fullbody:      'Full Body',
+      upper_lower:   'Upper / Lower',
+      ppl:           'Push Pull Legs',
+      torso_pierna:  'Torso / Pierna',
+      especializado: 'Especializado',
     }
-  }, [ultimoPlan])
+    const tipo = tipoMap[rutina.tipo_rutina] || rutina.tipo_rutina || '—'
+    const kcal = macros.calorias_objetivo
+
+    return (
+      <div style={{
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        padding: '18px 22px',
+        marginBottom: 20,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 44, height: 44,
+            background: 'rgba(198,241,53,0.09)',
+            border: '1px solid rgba(198,241,53,0.2)',
+            borderRadius: 11,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <span className="material-icons-round" style={{ fontSize: 22, color: 'var(--lime)' }}>assignment</span>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 3 }}>Tu último plan generado</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>{tipo}</span>
+              <span style={{ fontSize: 12, color: objMeta.color, fontWeight: 600 }}>· {objMeta.label}</span>
+              {kcal && (
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>· {kcal.toLocaleString()} kcal/día</span>
+              )}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/resultados')}
+          className="btn-ghost"
+          style={{ fontSize: 13, flexShrink: 0 }}
+        >
+          Ver mi plan
+          <span className="material-icons-round" style={{ fontSize: 16 }}>arrow_forward</span>
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
@@ -77,12 +184,10 @@ export default function Dashboard() {
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Línea superior de acento */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 3,
           background: 'linear-gradient(90deg, var(--lime) 0%, var(--orange) 100%)',
         }} />
-        {/* Grid decorativo de fondo */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
           backgroundImage: 'linear-gradient(rgba(198,241,53,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(198,241,53,0.025) 1px, transparent 1px)',
@@ -93,7 +198,7 @@ export default function Dashboard() {
           <div>
             <div style={{
               fontFamily: 'Barlow Condensed, sans-serif',
-              fontSize: '11px', fontWeight: 600,
+              fontSize: 11, fontWeight: 600,
               letterSpacing: '0.12em', textTransform: 'uppercase',
               color: 'var(--lime)', marginBottom: 10,
             }}>
@@ -125,65 +230,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Banner del último plan (si existe) ── */}
-      {ultimoPlan && (() => {
-        const perfil  = typeof ultimoPlan.perfil === 'string' ? JSON.parse(ultimoPlan.perfil) : (ultimoPlan.perfil || {})
-        const macros  = typeof ultimoPlan.macros === 'string' ? JSON.parse(ultimoPlan.macros) : (ultimoPlan.macros || ultimoPlan.resultado?.nutricion || {})
-        const rutina  = typeof ultimoPlan.rutina === 'string' ? JSON.parse(ultimoPlan.rutina) : (ultimoPlan.rutina || ultimoPlan.resultado?.rutina || {})
-        const objetivo = perfil.objetivo || 'mantener'
-        const objMeta  = OBJETIVO_META[objetivo] || OBJETIVO_META.mantener
-        const tipoMap  = {
-          fullbody: 'Full Body', upper_lower: 'Upper / Lower',
-          ppl: 'Push Pull Legs', torso_pierna: 'Torso / Pierna', especializado: 'Especializado',
-        }
-        const tipo = tipoMap[rutina.tipo_rutina] || rutina.tipo_rutina || '—'
+      {/* ── Banner del último plan ── */}
+      {renderUltimoPlan()}
 
-        return (
-          <div style={{
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            padding: '18px 22px',
-            marginBottom: 20,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{
-                width: 44, height: 44,
-                background: 'rgba(198,241,53,0.09)',
-                border: '1px solid rgba(198,241,53,0.2)',
-                borderRadius: 11,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <span className="material-icons-round" style={{ fontSize: 22, color: 'var(--lime)' }}>assignment</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 3 }}>Tu último plan generado</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>{tipo}</span>
-                  <span style={{ fontSize: 12, color: objMeta.color, fontWeight: 600 }}>· {objMeta.label}</span>
-                  {macros.calorias_objetivo && (
-                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>· {macros.calorias_objetivo.toLocaleString()} kcal/día</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate('/resultados')}
-              className="btn-ghost"
-              style={{ fontSize: 13, flexShrink: 0 }}
-            >
-              Ver mi plan
-              <span className="material-icons-round" style={{ fontSize: 16 }}>arrow_forward</span>
-            </button>
-          </div>
-        )
-      })()}
-
-      {/* ── Beneficios del sistema ── */}
+      {/* ── Beneficios ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
         {BENEFICIOS.map(({ icon, titulo, desc, accent, bg, border }) => (
           <div key={titulo} style={{
@@ -220,7 +270,7 @@ export default function Dashboard() {
           <div>
             <div style={{
               fontFamily: 'Barlow Condensed, sans-serif',
-              fontSize: '11px', fontWeight: 600,
+              fontSize: 11, fontWeight: 600,
               letterSpacing: '0.12em', textTransform: 'uppercase',
               color: 'var(--muted)', marginBottom: 5,
             }}>Proceso</div>

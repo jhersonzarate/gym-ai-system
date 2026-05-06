@@ -68,14 +68,32 @@ def determinar_somatotipo(imc: float, objetivo: str) -> str:
         return "endomorfo"
 
 def simular_progreso(objetivo: str, semanas: int = 8) -> list:
-    """Simula progreso esperado durante 8 semanas"""
+    """
+    Simula progreso esperado durante 8 semanas con curva fisiológica realista.
+    - Las primeras semanas hay mayor cambio (agua, glucógeno).
+    - Las semanas intermedias se estabilizan.
+    - Las últimas semanas muestran adaptación/meseta.
+    """
     progreso = []
-    for semana in range(1, semanas + 1):
+
+    # Factores de progreso semana a semana (no lineal):
+    # Semana 1 es la de mayor efecto visible; luego se suaviza
+    factores_grasa   = [0.9, 0.8, 0.7, 0.6, 0.55, 0.5, 0.45, 0.4]
+    factores_musculo = [0.15, 0.20, 0.25, 0.28, 0.28, 0.26, 0.25, 0.22]
+
+    acumulado = 0.0
+    for i in range(semanas):
         if objetivo == "perder_grasa":
-            cambio = round(-0.4 * semana, 1)
+            delta = -factores_grasa[i]
         elif objetivo == "ganar_musculo":
-            cambio = round(0.25 * semana, 1)
+            delta = factores_musculo[i]
         else:
-            cambio = 0.0
-        progreso.append({"semana": semana, "cambio_kg": cambio})
+            delta = 0.0
+
+        acumulado = round(acumulado + delta, 1)
+        progreso.append({
+            "semana": i + 1,
+            "cambio_kg": acumulado
+        })
+
     return progreso

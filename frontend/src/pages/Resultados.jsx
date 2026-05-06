@@ -1,8 +1,9 @@
 // frontend/src/pages/Resultados.jsx
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import ExplicacionCard from '../components/ExplicacionCard'
 import ProgressChart   from '../components/ProgressChart'
+import { gymAPI }      from '../services/api'
 
 /* ─── Helpers ─── */
 function parseSafe(v) {
@@ -78,30 +79,129 @@ const TIPO_LABELS = {
   especializado: 'Especializado',
 }
 
+const TABS = [
+  { k: 'rutina',        l: 'Rutina Semanal',    icon: 'fitness_center' },
+  { k: 'nutricion',     l: 'Nutrición',          icon: 'restaurant'    },
+  { k: 'razonamiento',  l: 'Por qué este plan',  icon: 'lightbulb'     },
+  { k: 'progreso',      l: 'Progreso Estimado',  icon: 'show_chart'    },
+]
+
 /* ─── Página ─── */
 export default function Resultados() {
-  const navigate = useNavigate()
+  const navigate           = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  // Leer el resultado guardado en localStorage
-  const [data] = useState(() => {
-    const raw = localStorage.getItem('gym_resultado')
-    if (!raw) return null
-    try {
-      const parsed = JSON.parse(raw)
-      return parsed && typeof parsed === 'object' ? parsed : null
-    } catch {
-      return null
-    }
-  })
+  // Tab persiste en URL: ?tab=nutricion
+  const tabParam = searchParams.get('tab')
+  const [tab,      setTab]     = useState(TABS.find(t => t.k === tabParam) ? tabParam : 'rutina')
+  const [openDia,  setOpenDia] = useState(0)
+  const [checking, setChecking] = useState(true)
+  const [data,     setData]    = useState(null)
 
-  const [openDia, setOpenDia] = useState(0)
-  const [tab,     setTab]     = useState('rutina')
-
+  // ── Verificar validez del plan al montar ──────────────────────────────────
+  // Si el historial del backend está vacío, el plan local no es válido.
   useEffect(() => {
-    if (!data) navigate('/formulario')
-  }, [data, navigate])
+    const raw = localStorage.getItem('gym_resultado')
+    if (!raw) {
+      setChecking(false)
+      return
+    }
 
-  if (!data) return null
+    let localData = null
+    try {
+      localData = JSON.parse(raw)
+    } catch {
+      localStorage.removeItem('gym_resultado')
+      setChecking(false)
+      return
+    }
+
+    // Si el resultado tiene un `id`, verificar que ese registro exista en la DB
+    if (localData?.id) {
+      gymAPI.getHistory()
+        .then(({ data: histData }) => {
+          const ids = (histData.historial || []).map(h => h.id)
+          if (!ids.includes(localData.id)) {
+            // El plan ya no existe en DB — limpiar localStorage
+            localStorage.removeItem('gym_resultado')
+            setData(null)
+          } else {
+            setData(localData)
+          }
+        })
+        .catch(() => {
+          // Si no se puede verificar (offline/error), mostrar igual
+          setData(localData)
+        })
+        .finally(() => setChecking(false))
+    } else {
+      // Plan sin id (legado o desde historial) — mostrar normalmente
+      setData(localData)
+      setChecking(false)
+    }
+  }, [])
+
+  // Sincronizar tab con URL
+  const changeTab = (k) => {
+    setTab(k)
+    setSearchParams({ tab: k })
+  }
+
+  if (checking) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '320px', flexDirection: 'column', gap: 16,
+      }}>
+        <div style={{
+          width: 40, height: 40,
+          border: '3px solid var(--border)',
+          borderTopColor: 'var(--lime)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <span style={{ fontSize: 14, color: 'var(--muted)' }}>Verificando tu plan...</span>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '400px', flexDirection: 'column', gap: 16,
+        textAlign: 'center',
+      }}>
+        <div style={{
+          width: 72, height: 72,
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span className="material-icons-round" style={{ fontSize: 32, color: 'var(--border2)' }}>
+            assignment_late
+          </span>
+        </div>
+        <div>
+          <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+            No hay ningún plan activo
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+            Genera un plan personalizado para verlo aquí
+          </p>
+          <button
+            onClick={() => navigate('/formulario')}
+            className="btn-primary"
+            style={{ fontSize: 13, padding: '11px 22px' }}
+          >
+            <span className="material-icons-round" style={{ fontSize: 17 }}>bolt</span>
+            Generar mi plan
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   /* ── Extraer campos con fallback robusto ── */
   const perfil    = parseSafe(data.perfil)    || {}
@@ -110,36 +210,23 @@ export default function Resultados() {
   const rutina    = parseSafe(data.rutina)    || {}
   const progreso  = data.progreso_simulado    || []
 
-  // Objetivo: puede estar en perfil o en ia_decision
   const objetivo = perfil.objetivo || ia.objetivo || 'mantener'
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Extracción robusta de explicaciones:
-  //   - Array de strings (fallback Python): se usa directamente
-  //   - String con pipes separados (salida parseada del motor): se divide
-  //   - String vacío o null: devuelve [] para usar fallback en ExplicacionCard
-  // ──────────────────────────────────────────────────────────────────────────
+  // Extracción robusta de explicaciones
   const explicaciones = (() => {
     const raw = ia.explicacion
     if (!raw) return []
-    if (Array.isArray(raw)) {
-      return raw.map(e => (typeof e === 'string' ? e.trim() : '')).filter(Boolean)
-    }
-    if (typeof raw === 'string') {
-      if (raw.trim() === '') return []
-      return raw.split('|').map(s => s.trim()).filter(Boolean)
-    }
+    if (Array.isArray(raw))     return raw.map(e => (typeof e === 'string' ? e.trim() : '')).filter(Boolean)
+    if (typeof raw === 'string') return raw.trim() === '' ? [] : raw.split('|').map(s => s.trim()).filter(Boolean)
     return []
   })()
 
-  // Tipo de rutina legible
   const tipoLabel = TIPO_LABELS[rutina.tipo_rutina] || rutina.tipo_rutina || '—'
 
-  // Macros con guards para evitar NaN
-  const totalKcal  = nutricion.calorias_objetivo || 1
-  const protG      = nutricion.proteinas_g    || 0
-  const carbsG     = nutricion.carbohidratos_g || 0
-  const grasasG    = nutricion.grasas_g        || 0
+  const totalKcal = nutricion.calorias_objetivo || 1
+  const protG     = nutricion.proteinas_g       || 0
+  const carbsG    = nutricion.carbohidratos_g   || 0
+  const grasasG   = nutricion.grasas_g          || 0
 
   const macro = (g, mult) => ({
     kcal: Math.round(g * mult),
@@ -150,22 +237,19 @@ export default function Resultados() {
   const carbs  = macro(carbsG,  4)
   const grasas = macro(grasasG, 9)
 
-  const tabs = [
-    { k: 'rutina',    l: 'Rutina Semanal',    icon: 'fitness_center' },
-    { k: 'nutricion', l: 'Nutrición',          icon: 'restaurant'    },
-    { k: 'razonamiento', l: 'Por qué este plan', icon: 'lightbulb'   },
-    { k: 'progreso',  l: 'Progreso Estimado',  icon: 'show_chart'    },
-  ]
-
   return (
-    <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+    <div className="animate-fade-up" style={{ maxWidth: 1040, margin: '0 auto' }}>
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22, gap: 16 }}>
+      <div style={{
+        display: 'flex', alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        marginBottom: 22, gap: 16,
+      }}>
         <div>
           <div style={{
             fontFamily: 'Barlow Condensed, sans-serif',
-            fontSize: '11px', fontWeight: 600,
+            fontSize: 11, fontWeight: 600,
             letterSpacing: '0.12em', textTransform: 'uppercase',
             color: 'var(--lime)', marginBottom: 6,
           }}>Plan generado</div>
@@ -187,7 +271,11 @@ export default function Resultados() {
             <span className="material-icons-round" style={{ fontSize: 16 }}>history</span>
             Historial
           </button>
-          <button onClick={() => navigate('/formulario')} className="btn-primary" style={{ fontSize: 13, padding: '10px 18px' }}>
+          <button
+            onClick={() => navigate('/formulario')}
+            className="btn-primary"
+            style={{ fontSize: 13, padding: '10px 18px' }}
+          >
             <span className="material-icons-round" style={{ fontSize: 16 }}>refresh</span>
             Nuevo plan
           </button>
@@ -196,26 +284,24 @@ export default function Resultados() {
 
       {/* ── Stats físicos ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-        <StatCard icon="monitor_weight"        label="IMC"        value={perfil.imc || '—'}          sub={perfil.imc_categoria?.replace(/_/g, ' ')} />
-        <StatCard icon="local_fire_department" label="BMR"        value={perfil.bmr || '—'}          sub="kcal basales"       accent="var(--orange)" />
-        <StatCard icon="bolt"                  label="TDEE"       value={perfil.tdee || '—'}         sub="kcal con actividad" accent="#F59E0B"        />
-        <StatCard icon="accessibility_new"     label="Somatotipo" value={perfil.somatotipo || '—'}   sub="tipo corporal"      accent="#A78BFA"        />
+        <StatCard icon="monitor_weight"        label="IMC"        value={perfil.imc || '—'}         sub={perfil.imc_categoria?.replace(/_/g, ' ')} />
+        <StatCard icon="local_fire_department" label="BMR"        value={perfil.bmr || '—'}         sub="kcal basales"       accent="var(--orange)" />
+        <StatCard icon="bolt"                  label="TDEE"       value={perfil.tdee || '—'}        sub="kcal con actividad" accent="#F59E0B"        />
+        <StatCard icon="accessibility_new"     label="Somatotipo" value={perfil.somatotipo || '—'}  sub="tipo corporal"      accent="#A78BFA"        />
       </div>
 
       {/* ── Decisiones del sistema ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 22 }}>
         {[
-          { l: 'Tipo Rutina', v: tipoLabel,                                         icon: 'fitness_center', accent: 'var(--lime)'   },
-          { l: 'Frecuencia',  v: ia.frecuencia ? `${ia.frecuencia} días/sem` : '—', icon: 'calendar_today', accent: '#60A5FA'       },
-          { l: 'Intensidad',  v: ia.intensidad || '—',                              icon: 'speed',          accent: 'var(--orange)' },
-          { l: 'Cardio',      v: ia.usa_cardio ? 'Incluido' : 'Sin cardio',         icon: 'directions_run', accent: ia.usa_cardio ? 'var(--lime)' : '#6B7280' },
+          { l: 'Tipo Rutina', v: tipoLabel,                                          icon: 'fitness_center', accent: 'var(--lime)'   },
+          { l: 'Frecuencia',  v: ia.frecuencia ? `${ia.frecuencia} días/sem` : '—',  icon: 'calendar_today', accent: '#60A5FA'       },
+          { l: 'Intensidad',  v: ia.intensidad || '—',                               icon: 'speed',          accent: 'var(--orange)' },
+          { l: 'Cardio',      v: ia.usa_cardio ? 'Incluido' : 'Sin cardio',          icon: 'directions_run', accent: ia.usa_cardio ? 'var(--lime)' : '#6B7280' },
         ].map(({ l, v, icon, accent }) => (
           <div key={l} style={{
             background: `${accent}08`,
             border: `1px solid ${accent}22`,
-            borderRadius: 10,
-            padding: '15px 14px',
-            textAlign: 'center',
+            borderRadius: 10, padding: '15px 14px', textAlign: 'center',
           }}>
             <span className="material-icons-round" style={{ fontSize: 20, color: accent, display: 'block', marginBottom: 7 }}>{icon}</span>
             <div style={{
@@ -236,18 +322,17 @@ export default function Resultados() {
         borderRadius: 10, padding: 4,
         marginBottom: 18,
       }}>
-        {tabs.map(({ k, l, icon }) => (
+        {TABS.map(({ k, l, icon }) => (
           <button
             key={k}
-            onClick={() => setTab(k)}
+            onClick={() => changeTab(k)}
             style={{
               flex: 1, padding: '9px 10px', borderRadius: 7,
               border: 'none',
               background: tab === k ? 'var(--lime)' : 'transparent',
               color: tab === k ? '#080A0C' : 'var(--muted2)',
               fontSize: 12, fontWeight: tab === k ? 700 : 400,
-              cursor: 'pointer',
-              transition: 'all 0.15s',
+              cursor: 'pointer', transition: 'all 0.15s',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
               fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.04em',
             }}
@@ -276,8 +361,7 @@ export default function Resultados() {
               <div>
                 <h2 style={{
                   fontFamily: 'Barlow Condensed, sans-serif',
-                  fontSize: 19, fontWeight: 700, letterSpacing: '0.02em',
-                  color: 'var(--text)',
+                  fontSize: 19, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--text)',
                 }}>
                   Rutina {tipoLabel}
                 </h2>
@@ -292,9 +376,7 @@ export default function Resultados() {
                 borderRadius: 100,
                 fontSize: 11, fontWeight: 700, color: 'var(--lime)',
                 fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.06em',
-              }}>
-                PERSONALIZADO
-              </div>
+              }}>PERSONALIZADO</div>
             </div>
 
             <div style={{ display: 'flex' }}>
@@ -311,8 +393,7 @@ export default function Resultados() {
                       border: 'none',
                       borderBottom: '1px solid var(--border)',
                       borderLeft: `3px solid ${openDia === i ? 'var(--lime)' : 'transparent'}`,
-                      cursor: 'pointer', textAlign: 'left',
-                      transition: 'all 0.12s',
+                      cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s',
                     }}
                   >
                     <div style={{
@@ -352,17 +433,13 @@ export default function Resultados() {
                       }}>
                         <h3 style={{
                           fontFamily: 'Barlow Condensed, sans-serif',
-                          fontSize: 17, fontWeight: 700, letterSpacing: '0.02em',
-                          color: 'var(--text)',
-                        }}>
-                          {dia.nombre}
-                        </h3>
+                          fontSize: 17, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--text)',
+                        }}>{dia.nombre}</h3>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                         {(dia.ejercicios || []).map((ex, j) => {
                           const isCardio = ex.grupo === 'cardio'
                           const aColor   = isCardio ? '#60A5FA' : 'var(--lime)'
-                          // Soporte para camelCase (motor Scala) y snake_case (fallback Python)
                           const series   = ex.series
                           const reps     = ex.repeticiones || ex.reps
                           const descanso = ex.descanso_seg || ex.descansoSeg || 0
@@ -429,18 +506,14 @@ export default function Resultados() {
         {tab === 'nutricion' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 14 }}>
             <div style={{
-              background: 'var(--card)',
-              border: '1px solid var(--border)',
+              background: 'var(--card)', border: '1px solid var(--border)',
               borderRadius: 12, padding: 22,
             }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
                 <h2 style={{
                   fontFamily: 'Barlow Condensed, sans-serif',
-                  fontSize: 19, fontWeight: 700, letterSpacing: '0.02em',
-                  color: 'var(--text)',
-                }}>
-                  Distribución de Macros
-                </h2>
+                  fontSize: 19, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--text)',
+                }}>Distribución de Macros</h2>
                 <div>
                   <div style={{
                     fontFamily: 'Bebas Neue, sans-serif',
@@ -461,20 +534,19 @@ export default function Resultados() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'BMR',   value: perfil.bmr,  sub: 'Calorías en reposo',    icon: 'bedtime', color: '#A78BFA' },
-                { label: 'TDEE',  value: perfil.tdee, sub: 'Calorías con actividad', icon: 'bolt',   color: '#F59E0B' },
-                { label: 'META',  value: totalKcal,   sub: 'Objetivo diario',        icon: 'flag',   color: 'var(--lime)' },
+                { label: 'BMR',  value: perfil.bmr,  sub: 'Calorías en reposo',     icon: 'bedtime', color: '#A78BFA' },
+                { label: 'TDEE', value: perfil.tdee, sub: 'Calorías con actividad',  icon: 'bolt',   color: '#F59E0B' },
+                { label: 'META', value: totalKcal,   sub: 'Objetivo diario',         icon: 'flag',   color: 'var(--lime)' },
               ].map(({ label, value, sub, icon, color }) => (
                 <div key={label} style={{
-                  background: 'var(--card)',
-                  border: '1px solid var(--border)',
+                  background: 'var(--card)', border: '1px solid var(--border)',
                   borderRadius: 10, padding: '16px 18px',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
                     <span className="material-icons-round" style={{ fontSize: 15, color }}>{icon}</span>
                     <span style={{
                       fontFamily: 'Barlow Condensed, sans-serif',
-                      fontSize: '11px', fontWeight: 600,
+                      fontSize: 11, fontWeight: 600,
                       letterSpacing: '0.12em', textTransform: 'uppercase',
                       color: 'var(--muted)',
                     }}>{label}</span>
@@ -504,11 +576,8 @@ export default function Resultados() {
             ? <ProgressChart data={progreso} objetivo={objetivo} />
             : (
               <div style={{
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                padding: '48px 32px',
-                textAlign: 'center',
+                background: 'var(--card)', border: '1px solid var(--border)',
+                borderRadius: 12, padding: '48px 32px', textAlign: 'center',
               }}>
                 <span className="material-icons-round" style={{ fontSize: 40, color: 'var(--muted)', display: 'block', marginBottom: 16 }}>
                   show_chart

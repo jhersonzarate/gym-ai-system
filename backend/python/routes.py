@@ -55,7 +55,7 @@ def register(data: RegistroRequest):
     try:
         cur.execute("SELECT id FROM usuarios WHERE email = %s", (data.email,))
         if cur.fetchone():
-            raise HTTPException(status_code=400, detail="Email ya registrado")
+            raise HTTPException(status_code=400, detail="Este correo ya está registrado")
 
         hashed = hash_password(data.password)
         cur.execute(
@@ -65,7 +65,12 @@ def register(data: RegistroRequest):
         user_id = cur.fetchone()[0]
         conn.commit()
         token = create_token(user_id, data.email)
-        return {"message": "Usuario registrado", "token": token, "user_id": user_id, "nombre": data.nombre}
+        return {
+            "message": "Cuenta creada exitosamente",
+            "token": token,
+            "user_id": user_id,
+            "nombre": data.nombre
+        }
     finally:
         cur.close()
         conn.close()
@@ -82,7 +87,7 @@ def login(data: LoginRequest):
         )
         row = cur.fetchone()
         if not row or not verify_password(data.password, row[2]):
-            raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+            raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
 
         token = create_token(row[0], data.email)
         return {"token": token, "user_id": row[0], "nombre": row[1]}
@@ -103,7 +108,7 @@ def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
     somatotipo = determinar_somatotipo(imc, perfil.objetivo)
     progreso = simular_progreso(perfil.objetivo)
 
-    # 2. Consulta Prolog (IA)
+    # 2. Consulta al motor de inferencia (IA)
     perfil_dict = {
         **perfil.dict(),
         "imc": imc,
@@ -112,48 +117,51 @@ def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
     }
     prolog_result = consultar_prolog(perfil_dict)
 
-    # 3. Añadir objetivo en ia_decision para que el frontend pueda accederlo
-    #    sin necesidad de cruzar con perfil
+    # 3. Añadir objetivo en ia_decision
     prolog_result["objetivo"] = perfil.objetivo
 
-    # 4. Generación rutina Scala/Python
+    # 4. Generación rutina
     scala_params = {
         **perfil.dict(),
         **prolog_result
     }
     rutina = generar_rutina_scala(scala_params)
 
-    # 5. Guardar en historial
+    # 5. Guardar en historial — INCLUYE ia_decision_json
     conn = get_connection()
     cur = conn.cursor()
     try:
         cur.execute("""
-            INSERT INTO historial (usuario_id, perfil_json, rutina_json, macros_json)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO historial (usuario_id, perfil_json, rutina_json, macros_json, ia_decision_json)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
         """, (
             user["user_id"],
             json.dumps(perfil_dict),
             json.dumps(rutina),
-            json.dumps(macros)
+            json.dumps(macros),
+            json.dumps(prolog_result),
         ))
+        historial_id = cur.fetchone()[0]
         conn.commit()
     finally:
         cur.close()
         conn.close()
 
     return {
+        "id": historial_id,
         "perfil": {
             "imc": imc,
             "imc_categoria": imc_cat,
             "bmr": bmr,
             "tdee": tdee,
             "somatotipo": somatotipo,
-            "objetivo": perfil.objetivo,       # incluir aquí también
+            "objetivo": perfil.objetivo,
             "nivel": perfil.nivel,
             "dias_disponibles": perfil.dias_disponibles,
         },
         "nutricion": macros,
-        "ia_decision": prolog_result,          # ya incluye objetivo
+        "ia_decision": prolog_result,
         "rutina": rutina,
         "progreso_simulado": progreso
     }
@@ -165,23 +173,61 @@ def get_history(user=Depends(get_current_user)):
     cur = conn.cursor()
     try:
         cur.execute("""
-            SELECT id, created_at, perfil_json, rutina_json, macros_json
+            SELECT id, created_at, perfil_json, rutina_json, macros_json, ia_decision_json
             FROM historial
             WHERE usuario_id = %s
             ORDER BY created_at DESC
-            LIMIT 10
+            LIMIT 20
         """, (user["user_id"],))
         rows = cur.fetchall()
         history = []
         for row in rows:
             history.append({
-                "id":     row[0],
-                "fecha":  row[1].isoformat(),
-                "perfil": row[2],
-                "rutina": row[3],
-                "macros": row[4]
+                "id":          row[0],
+                "fecha":       row[1].isoformat(),
+                "perfil":      row[2],
+                "rutina":      row[3],
+                "macros":      row[4],
+                "ia_decision": row[5],   # ← ahora incluido
             })
         return {"historial": history}
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.delete("/history/{item_id}")
+def delete_history_item(item_id: int, user=Depends(get_current_user)):
+    """Elimina un plan específico del historial del usuario."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "DELETE FROM historial WHERE id = %s AND usuario_id = %s RETURNING id",
+            (item_id, user["user_id"])
+        )
+        deleted = cur.fetchone()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Plan no encontrado")
+        conn.commit()
+        return {"message": "Plan eliminado", "id": item_id}
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.delete("/history")
+def delete_all_history(user=Depends(get_current_user)):
+    """Elimina todo el historial del usuario."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "DELETE FROM historial WHERE usuario_id = %s",
+            (user["user_id"],)
+        )
+        conn.commit()
+        return {"message": "Historial eliminado completamente"}
     finally:
         cur.close()
         conn.close()

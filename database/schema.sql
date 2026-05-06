@@ -37,13 +37,27 @@ CREATE TABLE IF NOT EXISTS rutinas (
 );
 
 CREATE TABLE IF NOT EXISTS historial (
-    id           SERIAL PRIMARY KEY,
-    usuario_id   INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-    perfil_json  JSONB,
-    rutina_json  JSONB,
-    macros_json  JSONB,
-    created_at   TIMESTAMP DEFAULT NOW()
+    id               SERIAL PRIMARY KEY,
+    usuario_id       INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+    perfil_json      JSONB,
+    rutina_json      JSONB,
+    macros_json      JSONB,
+    ia_decision_json JSONB,
+    progreso_json    JSONB,
+    created_at       TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_historial_usuario ON historial(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_rutinas_usuario   ON rutinas(usuario_id);
+
+-- Migración segura: agregar columna si no existe (para bases de datos ya creadas)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='historial' AND column_name='ia_decision_json'
+    ) THEN
+        ALTER TABLE historial ADD COLUMN ia_decision_json JSONB;
+    END IF;
+END
+$$;
