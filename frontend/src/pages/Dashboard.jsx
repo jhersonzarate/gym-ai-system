@@ -3,55 +3,58 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { gymAPI } from '../services/api'
 
-const TECNOLOGIAS = [
+const BENEFICIOS = [
   {
-    tag: 'Prolog',
     icon: 'psychology',
-    titulo: 'Motor de Inferencia',
-    desc: 'Un sistema experto con más de 25 reglas determina tu frecuencia, tipo de rutina, intensidad y cardio según tu perfil físico real.',
-    accent: 'var(--gym-lime)',
+    titulo: 'Análisis inteligente',
+    desc: 'El sistema evalúa más de 25 variables de tu perfil físico para determinar la rutina exacta que necesitas.',
+    accent: 'var(--lime)',
     bg: 'rgba(198,241,53,0.05)',
     border: 'rgba(198,241,53,0.14)',
   },
   {
-    tag: 'Scala',
-    icon: 'code',
-    titulo: 'Generador de Rutinas',
-    desc: 'Motor funcional que construye rutinas completas: Full Body, Upper/Lower, PPL, Torso/Pierna y Especializado con ejercicios reales.',
+    icon: 'fitness_center',
+    titulo: 'Rutinas personalizadas',
+    desc: 'Full Body, Upper/Lower, Push-Pull-Legs, Torso/Pierna y Especializado. Cada plan es único para tu nivel y disponibilidad.',
     accent: '#60A5FA',
     bg: 'rgba(96,165,250,0.05)',
     border: 'rgba(96,165,250,0.14)',
   },
   {
-    tag: 'Python',
-    icon: 'calculate',
-    titulo: 'Cálculos Metabólicos',
-    desc: 'BMR con fórmula Mifflin-St Jeor, TDEE según actividad real, distribución de macros por objetivo y simulación de progreso semanal.',
-    accent: 'var(--gym-orange)',
+    icon: 'restaurant',
+    titulo: 'Plan nutricional exacto',
+    desc: 'Calorías, proteínas, carbohidratos y grasas calculadas con fórmulas científicas adaptadas a tu objetivo corporal.',
+    accent: 'var(--orange)',
     bg: 'rgba(242,101,34,0.05)',
     border: 'rgba(242,101,34,0.14)',
   },
 ]
 
 const FLUJO = [
-  { num: '01', label: 'Ingresas tu perfil',       desc: 'Datos físicos y objetivo corporal', icon: 'person_outline'       },
-  { num: '02', label: 'Prolog razona',             desc: 'Motor IA evalúa 25+ reglas',       icon: 'psychology'           },
-  { num: '03', label: 'Scala construye',           desc: 'Genera tu rutina completa',        icon: 'code'                 },
-  { num: '04', label: 'Obtienes tu plan',          desc: 'Rutina + Nutrición + Progreso',    icon: 'assignment_turned_in' },
+  { num: '01', label: 'Ingresa tu perfil',   desc: 'Datos físicos y objetivo',      icon: 'person_outline'       },
+  { num: '02', label: 'El sistema analiza',  desc: 'Evaluación inteligente',        icon: 'psychology'           },
+  { num: '03', label: 'Se genera tu plan',   desc: 'Rutina completa en segundos',   icon: 'auto_awesome'         },
+  { num: '04', label: 'Entrena y progresa',  desc: 'Rutina + Nutrición + Progreso', icon: 'assignment_turned_in' },
 ]
+
+const OBJETIVO_META = {
+  perder_grasa:  { label: 'Perder Grasa',  color: '#F26522' },
+  ganar_musculo: { label: 'Ganar Músculo', color: '#C6F135' },
+  mantener:      { label: 'Mantener',      color: '#60A5FA' },
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const nombre   = localStorage.getItem('gym_nombre') || 'Atleta'
-  const [ultimoPlan, setUltimoPlan] = useState(null)
-
-  useEffect(() => {
-    // Intentar cargar el último plan del usuario
+  const [ultimoPlan, setUltimoPlan] = useState(() => {
     const saved = (() => {
       try { return JSON.parse(localStorage.getItem('gym_saved_results') || '[]') } catch { return [] }
     })()
-    if (saved.length > 0) setUltimoPlan(saved[0])
-    else {
+    return saved.length > 0 ? saved[0] : null
+  })
+
+  useEffect(() => {
+    if (!ultimoPlan) {
       gymAPI.getHistory()
         .then(({ data }) => {
           const items = data.historial || []
@@ -59,33 +62,27 @@ export default function Dashboard() {
         })
         .catch(() => {})
     }
-  }, [])
-
-  const OBJETIVO_META = {
-    perder_grasa:  { label: 'Perder Grasa',  color: '#F26522' },
-    ganar_musculo: { label: 'Ganar Músculo', color: '#C6F135' },
-    mantener:      { label: 'Mantener',      color: '#60A5FA' },
-  }
+  }, [ultimoPlan])
 
   return (
-    <div className="animate-fade-up" style={{ maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
       {/* ── Hero ── */}
       <div style={{
-        background: 'var(--gym-card)',
-        border: '1px solid var(--gym-border)',
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
         borderRadius: 16,
         padding: '38px 44px',
         marginBottom: 20,
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Línea superior */}
+        {/* Línea superior de acento */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-          background: 'linear-gradient(90deg, var(--gym-lime) 0%, var(--gym-orange) 100%)',
+          background: 'linear-gradient(90deg, var(--lime) 0%, var(--orange) 100%)',
         }} />
-        {/* Grid de fondo */}
+        {/* Grid decorativo de fondo */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
           backgroundImage: 'linear-gradient(rgba(198,241,53,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(198,241,53,0.025) 1px, transparent 1px)',
@@ -94,16 +91,26 @@ export default function Dashboard() {
 
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
           <div>
-            <div className="label-tag" style={{ color: 'var(--gym-lime)', marginBottom: 10 }}>
+            <div style={{
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontSize: '11px', fontWeight: 600,
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+              color: 'var(--lime)', marginBottom: 10,
+            }}>
               Bienvenido de vuelta
             </div>
-            <h1 className="font-display" style={{ fontSize: 'clamp(40px, 5vw, 58px)', lineHeight: 1, marginBottom: 14 }}>
+            <h1 style={{
+              fontFamily: 'Bebas Neue, sans-serif',
+              fontSize: 'clamp(40px, 5vw, 58px)',
+              lineHeight: 1, marginBottom: 14,
+              color: 'var(--text)',
+            }}>
               {nombre.split(' ')[0].toUpperCase()}
               <br />
-              <span style={{ color: 'var(--gym-lime)' }}>LISTO PARA ENTRENAR</span>
+              <span style={{ color: 'var(--lime)' }}>LISTO PARA ENTRENAR</span>
             </h1>
-            <p style={{ color: 'var(--gym-muted2)', fontSize: 15, maxWidth: 440, lineHeight: 1.65 }}>
-              Sistema experto multilenguaje que analiza tu perfil físico y genera planes de entrenamiento y nutrición personalizados con inteligencia artificial real.
+            <p style={{ color: 'var(--muted2)', fontSize: 15, maxWidth: 440, lineHeight: 1.65 }}>
+              Sistema de recomendación inteligente que analiza tu perfil físico y genera planes de entrenamiento y nutrición completamente personalizados.
             </p>
           </div>
 
@@ -118,22 +125,23 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Último plan (si existe) ── */}
+      {/* ── Banner del último plan (si existe) ── */}
       {ultimoPlan && (() => {
-        const perfil  = ultimoPlan.perfil || ultimoPlan.resultado?.perfil || {}
-        const macros  = ultimoPlan.macros || ultimoPlan.resultado?.nutricion || {}
-        const rutina  = ultimoPlan.rutina || ultimoPlan.resultado?.rutina || {}
+        const perfil  = typeof ultimoPlan.perfil === 'string' ? JSON.parse(ultimoPlan.perfil) : (ultimoPlan.perfil || {})
+        const macros  = typeof ultimoPlan.macros === 'string' ? JSON.parse(ultimoPlan.macros) : (ultimoPlan.macros || ultimoPlan.resultado?.nutricion || {})
+        const rutina  = typeof ultimoPlan.rutina === 'string' ? JSON.parse(ultimoPlan.rutina) : (ultimoPlan.rutina || ultimoPlan.resultado?.rutina || {})
         const objetivo = perfil.objetivo || 'mantener'
         const objMeta  = OBJETIVO_META[objetivo] || OBJETIVO_META.mantener
-        const tipo     = {
+        const tipoMap  = {
           fullbody: 'Full Body', upper_lower: 'Upper / Lower',
-          ppl: 'PPL', torso_pierna: 'Torso / Pierna', especializado: 'Especializado',
-        }[rutina.tipo_rutina] || '—'
+          ppl: 'Push Pull Legs', torso_pierna: 'Torso / Pierna', especializado: 'Especializado',
+        }
+        const tipo = tipoMap[rutina.tipo_rutina] || rutina.tipo_rutina || '—'
 
         return (
           <div style={{
-            background: 'var(--gym-card)',
-            border: '1px solid var(--gym-border)',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
             borderRadius: 12,
             padding: '18px 22px',
             marginBottom: 20,
@@ -150,15 +158,15 @@ export default function Dashboard() {
                 borderRadius: 11,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
-                <span className="material-icons-round" style={{ fontSize: 22, color: 'var(--gym-lime)' }}>assignment</span>
+                <span className="material-icons-round" style={{ fontSize: 22, color: 'var(--lime)' }}>assignment</span>
               </div>
               <div>
-                <div style={{ fontSize: 12, color: 'var(--gym-muted)', marginBottom: 3 }}>Tu último plan generado</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 3 }}>Tu último plan generado</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--gym-text)' }}>{tipo}</span>
+                  <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>{tipo}</span>
                   <span style={{ fontSize: 12, color: objMeta.color, fontWeight: 600 }}>· {objMeta.label}</span>
                   {macros.calorias_objetivo && (
-                    <span style={{ fontSize: 12, color: 'var(--gym-muted)' }}>· {macros.calorias_objetivo.toLocaleString()} kcal/día</span>
+                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>· {macros.calorias_objetivo.toLocaleString()} kcal/día</span>
                   )}
                 </div>
               </div>
@@ -168,17 +176,17 @@ export default function Dashboard() {
               className="btn-ghost"
               style={{ fontSize: 13, flexShrink: 0 }}
             >
-              Ver plan
+              Ver mi plan
               <span className="material-icons-round" style={{ fontSize: 16 }}>arrow_forward</span>
             </button>
           </div>
         )
       })()}
 
-      {/* ── Stack tecnológico ── */}
+      {/* ── Beneficios del sistema ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
-        {TECNOLOGIAS.map(({ tag, icon, titulo, desc, accent, bg, border }) => (
-          <div key={tag} style={{
+        {BENEFICIOS.map(({ icon, titulo, desc, accent, bg, border }) => (
+          <div key={titulo} style={{
             background: bg,
             border: `1px solid ${border}`,
             borderRadius: 12,
@@ -194,29 +202,34 @@ export default function Dashboard() {
               }}>
                 <span className="material-icons-round" style={{ fontSize: 20, color: accent }}>{icon}</span>
               </div>
-              <span style={{
-                fontSize: 11, fontWeight: 700, color: accent,
-                fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.1em',
-              }}>{tag}</span>
             </div>
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--gym-text)', marginBottom: 8 }}>{titulo}</h3>
-            <p style={{ fontSize: 13, color: 'var(--gym-muted)', lineHeight: 1.6 }}>{desc}</p>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>{titulo}</h3>
+            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>{desc}</p>
           </div>
         ))}
       </div>
 
       {/* ── Cómo funciona ── */}
       <div style={{
-        background: 'var(--gym-card)',
-        border: '1px solid var(--gym-border)',
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
         borderRadius: 14,
         padding: '28px 32px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
           <div>
-            <div className="label-tag" style={{ marginBottom: 5 }}>Flujo del sistema</div>
-            <h2 className="font-condensed" style={{ fontSize: 21, fontWeight: 700, letterSpacing: '0.02em' }}>
-              Cómo funciona GymExpert
+            <div style={{
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontSize: '11px', fontWeight: 600,
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+              color: 'var(--muted)', marginBottom: 5,
+            }}>Proceso</div>
+            <h2 style={{
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontSize: 21, fontWeight: 700, letterSpacing: '0.02em',
+              color: 'var(--text)',
+            }}>
+              ¿Cómo funciona GymExpert?
             </h2>
           </div>
           <button onClick={() => navigate('/formulario')} className="btn-ghost" style={{ fontSize: 13 }}>
@@ -236,16 +249,20 @@ export default function Dashboard() {
                   borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
-                  <span className="material-icons-round" style={{ fontSize: 16, color: 'var(--gym-lime)' }}>{icon}</span>
+                  <span className="material-icons-round" style={{ fontSize: 16, color: 'var(--lime)' }}>{icon}</span>
                 </div>
-                <span className="font-condensed" style={{ fontSize: 26, fontWeight: 700, color: 'rgba(198,241,53,0.2)' }}>{num}</span>
+                <span style={{
+                  fontFamily: 'Barlow Condensed, sans-serif',
+                  fontSize: 26, fontWeight: 700,
+                  color: 'rgba(198,241,53,0.2)',
+                }}>{num}</span>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gym-text)', marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 12, color: 'var(--gym-muted)' }}>{desc}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>{desc}</div>
               {i < FLUJO.length - 1 && (
                 <span className="material-icons-round" style={{
                   position: 'absolute', right: -10, top: 8,
-                  fontSize: 16, color: 'var(--gym-border2)',
+                  fontSize: 16, color: 'var(--border2)',
                 }}>chevron_right</span>
               )}
             </div>

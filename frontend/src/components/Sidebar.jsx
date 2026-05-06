@@ -2,18 +2,18 @@
 import { NavLink } from 'react-router-dom'
 
 const links = [
-  { to: '/',           icon: 'space_dashboard', label: 'Dashboard'    },
-  { to: '/formulario', icon: 'tune',            label: 'Nuevo Plan'   },
-  { to: '/resultados', icon: 'assignment',      label: 'Resultados'   },
-  { to: '/historial',  icon: 'history',         label: 'Historial'    },
+  { to: '/',           icon: 'space_dashboard', label: 'Inicio'      },
+  { to: '/formulario', icon: 'tune',            label: 'Nuevo Plan'  },
+  { to: '/resultados', icon: 'assignment',      label: 'Mi Plan'     },
+  { to: '/historial',  icon: 'history',         label: 'Historial'   },
 ]
 
 export default function Sidebar() {
   return (
     <aside style={{
       width: '220px',
-      background: 'var(--gym-card)',
-      borderRight: '1px solid var(--gym-border)',
+      background: 'var(--card)',
+      borderRight: '1px solid var(--border)',
       display: 'flex',
       flexDirection: 'column',
       flexShrink: 0,
@@ -21,14 +21,14 @@ export default function Sidebar() {
       {/* Logo */}
       <div style={{
         padding: '24px 20px',
-        borderBottom: '1px solid var(--gym-border)',
+        borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
       }}>
         <div style={{
           width: '36px', height: '36px',
-          background: 'var(--gym-lime)',
+          background: 'var(--lime)',
           borderRadius: '9px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
@@ -36,16 +36,28 @@ export default function Sidebar() {
           <span className="material-icons-round" style={{ fontSize: '20px', color: '#080A0C' }}>fitness_center</span>
         </div>
         <div>
-          <div className="font-condensed" style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '0.05em', lineHeight: 1.1 }}>
+          <div style={{
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontSize: '16px', fontWeight: 700,
+            letterSpacing: '0.05em', lineHeight: 1.1,
+            color: 'var(--text)',
+          }}>
             GYMEXPERT
           </div>
-          <div style={{ fontSize: '10px', color: 'var(--gym-muted)', letterSpacing: '0.1em' }}>AI SYSTEM</div>
+          <div style={{ fontSize: '10px', color: 'var(--muted)', letterSpacing: '0.1em' }}>AI SYSTEM</div>
         </div>
       </div>
 
       {/* Navigation */}
       <nav style={{ padding: '16px 12px', flex: 1 }}>
-        <div className="label-tag" style={{ paddingInline: '8px', marginBottom: '10px' }}>Menu</div>
+        <div style={{
+          fontFamily: 'Barlow Condensed, sans-serif',
+          fontSize: '11px', fontWeight: 600,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          color: 'var(--muted)',
+          paddingInline: '8px', marginBottom: '10px',
+        }}>Menú</div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {links.map(({ to, icon, label }) => (
             <NavLink
@@ -61,20 +73,22 @@ export default function Sidebar() {
                 textDecoration: 'none',
                 fontSize: '14px',
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#080A0C' : 'var(--gym-muted2)',
-                background: isActive ? 'var(--gym-lime)' : 'transparent',
+                color: isActive ? '#080A0C' : 'var(--muted2)',
+                background: isActive ? 'var(--lime)' : 'transparent',
                 transition: 'all 0.15s',
               })}
               onMouseEnter={e => {
-                if (!e.currentTarget.style.background.includes('C6F135')) {
+                const isActive = e.currentTarget.getAttribute('aria-current') === 'page'
+                if (!isActive) {
                   e.currentTarget.style.background = 'rgba(198,241,53,0.06)'
-                  e.currentTarget.style.color = 'var(--gym-text)'
+                  e.currentTarget.style.color = 'var(--text)'
                 }
               }}
               onMouseLeave={e => {
-                if (!e.currentTarget.getAttribute('aria-current')) {
+                const isActive = e.currentTarget.getAttribute('aria-current') === 'page'
+                if (!isActive) {
                   e.currentTarget.style.background = 'transparent'
-                  e.currentTarget.style.color = 'var(--gym-muted2)'
+                  e.currentTarget.style.color = 'var(--muted2)'
                 }
               }}
             >
@@ -91,22 +105,37 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Stack badge */}
+      {/* Info card sin mencionar tecnologías */}
       <div style={{
-        padding: '16px',
-        borderTop: '1px solid var(--gym-border)',
         margin: '0 12px 16px',
+        padding: '14px 16px',
         background: 'rgba(198,241,53,0.04)',
         borderRadius: '8px',
         border: '1px solid rgba(198,241,53,0.12)',
       }}>
-        <div style={{ fontSize: '11px', color: 'var(--gym-lime)', fontWeight: 600, letterSpacing: '0.08em', marginBottom: '8px' }}>
-          POWERED BY
+        <div style={{
+          fontSize: '11px', color: 'var(--lime)',
+          fontWeight: 600, letterSpacing: '0.08em',
+          fontFamily: 'Barlow Condensed, sans-serif',
+          marginBottom: '8px',
+        }}>
+          SISTEMA INTELIGENTE
         </div>
-        {[['Prolog', 'Motor IA'], ['Scala', 'Generador'], ['Python', 'API Backend']].map(([lang, role]) => (
-          <div key={lang} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-            <span style={{ fontSize: '12px', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, color: 'var(--gym-text)' }}>{lang}</span>
-            <span style={{ fontSize: '11px', color: 'var(--gym-muted)' }}>{role}</span>
+        {[
+          ['Motor de reglas',    'Análisis de perfil'],
+          ['Generador',         'Rutinas dinámicas'],
+          ['Calculadora',       'Macros y calorías'],
+        ].map(([label, role]) => (
+          <div key={label} style={{
+            display: 'flex', justifyContent: 'space-between',
+            alignItems: 'center', marginBottom: '5px',
+          }}>
+            <span style={{
+              fontSize: '12px',
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontWeight: 600, color: 'var(--text)',
+            }}>{label}</span>
+            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{role}</span>
           </div>
         ))}
       </div>

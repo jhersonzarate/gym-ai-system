@@ -12,46 +12,52 @@ function parseSafe(v) {
 }
 
 /* ─── Sub-componentes ─── */
-function StatCard({ icon, label, value, sub, accent = 'var(--gym-lime)' }) {
+function StatCard({ icon, label, value, sub, accent = 'var(--lime)' }) {
   return (
     <div style={{
-      background: 'var(--gym-card)',
-      border: '1px solid var(--gym-border)',
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
       borderRadius: 12,
       padding: '18px 20px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         <span className="material-icons-round" style={{ fontSize: 17, color: accent }}>{icon}</span>
         <span style={{
-          fontSize: 11, color: 'var(--gym-muted)',
+          fontSize: 11, color: 'var(--muted)',
           fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600,
           letterSpacing: '0.05em', textTransform: 'uppercase',
         }}>{label}</span>
       </div>
-      <div className="font-condensed" style={{ fontSize: 30, fontWeight: 700, color: accent, lineHeight: 1 }}>
+      <div style={{
+        fontFamily: 'Barlow Condensed, sans-serif',
+        fontSize: 30, fontWeight: 700, color: accent, lineHeight: 1,
+      }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 12, color: 'var(--gym-muted)', marginTop: 4, textTransform: 'capitalize' }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4, textTransform: 'capitalize' }}>{sub}</div>}
     </div>
   )
 }
 
 function MacroBar({ label, valor, kcal, pct, color, icon }) {
   return (
-    <div style={{ padding: '15px 0', borderBottom: '1px solid var(--gym-border)' }}>
+    <div style={{ padding: '15px 0', borderBottom: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="material-icons-round" style={{ fontSize: 16, color }}>{icon}</span>
-          <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{label}</span>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <span className="font-condensed" style={{ fontSize: 21, fontWeight: 700, color }}>{valor}g</span>
-          <span style={{ fontSize: 12, color: 'var(--gym-muted)', marginLeft: 6 }}>
+          <span style={{
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontSize: 21, fontWeight: 700, color,
+          }}>{valor}g</span>
+          <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 6 }}>
             {kcal} kcal · {pct}%
           </span>
         </div>
       </div>
-      <div style={{ height: 4, background: 'var(--gym-border)', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ height: 4, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
         <div style={{
           height: '100%',
           width: `${Math.min(pct, 100)}%`,
@@ -76,6 +82,7 @@ const TIPO_LABELS = {
 export default function Resultados() {
   const navigate = useNavigate()
 
+  // Leer el resultado guardado en localStorage
   const [data] = useState(() => {
     const raw = localStorage.getItem('gym_resultado')
     if (!raw) return null
@@ -91,6 +98,7 @@ export default function Resultados() {
   const [tab,     setTab]     = useState('rutina')
 
   useEffect(() => {
+    // Si no hay resultado, redirigir al formulario
     if (!data) navigate('/formulario')
   }, [data, navigate])
 
@@ -106,19 +114,32 @@ export default function Resultados() {
   // Objetivo: puede estar en perfil o en ia_decision
   const objetivo = perfil.objetivo || ia.objetivo || 'mantener'
 
-  // Explicaciones Prolog
+  // ──────────────────────────────────────────────────────────────────────────
+  // FIX CRÍTICO: Extracción correcta de explicaciones de Prolog
+  // El backend devuelve ia_decision.explicacion como:
+  //   - Array de strings (fallback Python)
+  //   - String con pipes separados (salida Prolog parseada)
+  //   - String vacío si Prolog falló
+  // ──────────────────────────────────────────────────────────────────────────
   const explicaciones = (() => {
     const raw = ia.explicacion
     if (!raw) return []
-    if (Array.isArray(raw)) return raw.filter(Boolean)
-    if (typeof raw === 'string') return raw.split('|').map(s => s.trim()).filter(Boolean)
+    if (Array.isArray(raw)) {
+      // Caso 1: ya es array (fallback Python)
+      return raw.map(e => (typeof e === 'string' ? e.trim() : '')).filter(Boolean)
+    }
+    if (typeof raw === 'string') {
+      if (raw.trim() === '') return []
+      // Caso 2: string con pipes (salida Prolog)
+      return raw.split('|').map(s => s.trim()).filter(Boolean)
+    }
     return []
   })()
 
-  // Tipo de rutina
+  // Tipo de rutina legible
   const tipoLabel = TIPO_LABELS[rutina.tipo_rutina] || rutina.tipo_rutina || '—'
 
-  // Macros con guards
+  // Macros con guards para evitar NaN
   const totalKcal  = nutricion.calorias_objetivo || 1
   const protG      = nutricion.proteinas_g    || 0
   const carbsG     = nutricion.carbohidratos_g || 0
@@ -126,7 +147,7 @@ export default function Resultados() {
 
   const macro = (g, mult) => ({
     kcal: Math.round(g * mult),
-    pct:  Math.round(g * mult / totalKcal * 100),
+    pct:  Math.round((g * mult) / totalKcal * 100),
   })
 
   const prot   = macro(protG,   4)
@@ -134,25 +155,35 @@ export default function Resultados() {
   const grasas = macro(grasasG, 9)
 
   const tabs = [
-    { k: 'rutina',    l: 'Rutina Semanal',   icon: 'fitness_center' },
-    { k: 'nutricion', l: 'Nutrición',         icon: 'restaurant'    },
-    { k: 'prolog',    l: 'Razonamiento IA',   icon: 'psychology'    },
-    { k: 'progreso',  l: 'Progreso Estimado', icon: 'show_chart'    },
+    { k: 'rutina',    l: 'Rutina Semanal',    icon: 'fitness_center' },
+    { k: 'nutricion', l: 'Nutrición',          icon: 'restaurant'    },
+    { k: 'prolog',    l: 'Por qué este plan',  icon: 'lightbulb'     },
+    { k: 'progreso',  l: 'Progreso Estimado',  icon: 'show_chart'    },
   ]
 
   return (
-    <div className="animate-fade-up" style={{ maxWidth: 1040, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22, gap: 16 }}>
         <div>
-          <div className="label-tag" style={{ marginBottom: 6, color: 'var(--gym-lime)' }}>Plan generado</div>
-          <h1 className="font-condensed" style={{ fontSize: 26, fontWeight: 700, letterSpacing: '0.02em' }}>
+          <div style={{
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontSize: '11px', fontWeight: 600,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: 'var(--lime)', marginBottom: 6,
+          }}>Plan generado</div>
+          <h1 style={{
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontSize: 26, fontWeight: 700, letterSpacing: '0.02em',
+            color: 'var(--text)',
+          }}>
             Tu plan personalizado
           </h1>
-          <p style={{ color: 'var(--gym-muted)', fontSize: 13, marginTop: 4 }}>
-            Motor IA: Prolog · Generador: {rutina.generado_por === 'scala_engine' ? 'Scala' : 'Python'}
-            {' · '}{tipoLabel}
-            {ia.frecuencia ? ` · ${ia.frecuencia} días/sem` : ''}
+          <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
+            {tipoLabel}
+            {ia.frecuencia ? ` · ${ia.frecuencia} días por semana` : ''}
+            {ia.intensidad ? ` · Intensidad ${ia.intensidad}` : ''}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
@@ -169,19 +200,19 @@ export default function Resultados() {
 
       {/* ── Stats físicos ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-        <StatCard icon="monitor_weight"      label="IMC"        value={perfil.imc || '—'}   sub={perfil.imc_categoria?.replace('_', ' ')} />
-        <StatCard icon="local_fire_department" label="BMR"      value={perfil.bmr || '—'}   sub="kcal basales"     accent="var(--gym-orange)" />
-        <StatCard icon="bolt"                label="TDEE"        value={perfil.tdee || '—'}  sub="kcal con actividad" accent="#F59E0B" />
-        <StatCard icon="accessibility_new"   label="Somatotipo" value={perfil.somatotipo || '—'} sub="tipo corporal" accent="#A78BFA" />
+        <StatCard icon="monitor_weight"        label="IMC"        value={perfil.imc || '—'}          sub={perfil.imc_categoria?.replace(/_/g, ' ')} />
+        <StatCard icon="local_fire_department" label="BMR"        value={perfil.bmr || '—'}          sub="kcal basales"       accent="var(--orange)" />
+        <StatCard icon="bolt"                  label="TDEE"       value={perfil.tdee || '—'}         sub="kcal con actividad" accent="#F59E0B"        />
+        <StatCard icon="accessibility_new"     label="Somatotipo" value={perfil.somatotipo || '—'}   sub="tipo corporal"      accent="#A78BFA"        />
       </div>
 
-      {/* ── Decisiones IA ── */}
+      {/* ── Decisiones del sistema ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 22 }}>
         {[
-          { l: 'Tipo Rutina',  v: tipoLabel,                                 icon: 'fitness_center', accent: 'var(--gym-lime)'   },
-          { l: 'Frecuencia',   v: ia.frecuencia ? `${ia.frecuencia} días/sem` : '—', icon: 'calendar_today', accent: '#60A5FA'          },
-          { l: 'Intensidad',   v: ia.intensidad || '—',                      icon: 'speed',          accent: 'var(--gym-orange)' },
-          { l: 'Cardio',       v: ia.usa_cardio ? 'Incluido' : 'Sin cardio', icon: 'directions_run', accent: ia.usa_cardio ? 'var(--gym-lime)' : '#6B7280' },
+          { l: 'Tipo Rutina', v: tipoLabel,                                   icon: 'fitness_center', accent: 'var(--lime)'   },
+          { l: 'Frecuencia',  v: ia.frecuencia ? `${ia.frecuencia} días/sem` : '—', icon: 'calendar_today', accent: '#60A5FA' },
+          { l: 'Intensidad',  v: ia.intensidad || '—',                        icon: 'speed',          accent: 'var(--orange)' },
+          { l: 'Cardio',      v: ia.usa_cardio ? 'Incluido' : 'Sin cardio',   icon: 'directions_run', accent: ia.usa_cardio ? 'var(--lime)' : '#6B7280' },
         ].map(({ l, v, icon, accent }) => (
           <div key={l} style={{
             background: `${accent}08`,
@@ -191,8 +222,12 @@ export default function Resultados() {
             textAlign: 'center',
           }}>
             <span className="material-icons-round" style={{ fontSize: 20, color: accent, display: 'block', marginBottom: 7 }}>{icon}</span>
-            <div style={{ fontSize: 10, color: 'var(--gym-muted)', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 3 }}>{l}</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gym-text)', textTransform: 'capitalize' }}>{v}</div>
+            <div style={{
+              fontSize: 10, color: 'var(--muted)',
+              fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600,
+              letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 3,
+            }}>{l}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', textTransform: 'capitalize' }}>{v}</div>
           </div>
         ))}
       </div>
@@ -200,8 +235,8 @@ export default function Resultados() {
       {/* ── Tabs ── */}
       <div style={{
         display: 'flex', gap: 4,
-        background: 'var(--gym-card)',
-        border: '1px solid var(--gym-border)',
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
         borderRadius: 10, padding: 4,
         marginBottom: 18,
       }}>
@@ -212,8 +247,8 @@ export default function Resultados() {
             style={{
               flex: 1, padding: '9px 10px', borderRadius: 7,
               border: 'none',
-              background: tab === k ? 'var(--gym-lime)' : 'transparent',
-              color: tab === k ? '#080A0C' : 'var(--gym-muted2)',
+              background: tab === k ? 'var(--lime)' : 'transparent',
+              color: tab === k ? '#080A0C' : 'var(--muted2)',
               fontSize: 12, fontWeight: tab === k ? 700 : 400,
               cursor: 'pointer',
               transition: 'all 0.15s',
@@ -228,21 +263,29 @@ export default function Resultados() {
       </div>
 
       {/* ── Contenido del tab ── */}
-      <div key={tab} className="animate-fade-up">
+      <div key={tab}>
 
         {/* RUTINA */}
         {tab === 'rutina' && (
           <div style={{
-            background: 'var(--gym-card)',
-            border: '1px solid var(--gym-border)',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
             borderRadius: 12, overflow: 'hidden',
           }}>
-            <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--gym-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{
+              padding: '18px 22px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
               <div>
-                <h2 className="font-condensed" style={{ fontSize: 19, fontWeight: 700, letterSpacing: '0.02em' }}>
+                <h2 style={{
+                  fontFamily: 'Barlow Condensed, sans-serif',
+                  fontSize: 19, fontWeight: 700, letterSpacing: '0.02em',
+                  color: 'var(--text)',
+                }}>
                   Rutina {tipoLabel}
                 </h2>
-                <p style={{ fontSize: 12, color: 'var(--gym-muted)', marginTop: 2 }}>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
                   {rutina.dias?.length || 0} días · Intensidad {ia.intensidad || '—'}
                 </p>
               </div>
@@ -251,16 +294,16 @@ export default function Resultados() {
                 background: 'rgba(198,241,53,0.09)',
                 border: '1px solid rgba(198,241,53,0.2)',
                 borderRadius: 100,
-                fontSize: 11, fontWeight: 700, color: 'var(--gym-lime)',
+                fontSize: 11, fontWeight: 700, color: 'var(--lime)',
                 fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.06em',
               }}>
-                {(rutina.generado_por || 'motor').replace('_', ' ').toUpperCase()}
+                PERSONALIZADO
               </div>
             </div>
 
             <div style={{ display: 'flex' }}>
               {/* Sidebar de días */}
-              <div style={{ width: 210, borderRight: '1px solid var(--gym-border)', flexShrink: 0 }}>
+              <div style={{ width: 210, borderRight: '1px solid var(--border)', flexShrink: 0 }}>
                 {(rutina.dias || []).map((dia, i) => (
                   <button
                     key={i}
@@ -270,26 +313,30 @@ export default function Resultados() {
                       padding: '13px 16px',
                       background: openDia === i ? 'rgba(198,241,53,0.05)' : 'transparent',
                       border: 'none',
-                      borderBottom: '1px solid var(--gym-border)',
-                      borderLeft: `3px solid ${openDia === i ? 'var(--gym-lime)' : 'transparent'}`,
+                      borderBottom: '1px solid var(--border)',
+                      borderLeft: `3px solid ${openDia === i ? 'var(--lime)' : 'transparent'}`,
                       cursor: 'pointer', textAlign: 'left',
                       transition: 'all 0.12s',
                     }}
                   >
                     <div style={{
                       width: 28, height: 28, flexShrink: 0,
-                      background: openDia === i ? 'var(--gym-lime)' : 'var(--gym-border)',
+                      background: openDia === i ? 'var(--lime)' : 'var(--border)',
                       borderRadius: 7,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 12,
-                      color: openDia === i ? '#080A0C' : 'var(--gym-muted)',
+                      color: openDia === i ? '#080A0C' : 'var(--muted)',
                       transition: 'all 0.12s',
                     }}>{i + 1}</div>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: openDia === i ? 'var(--gym-text)' : 'var(--gym-muted2)', lineHeight: 1.2 }}>
+                      <div style={{
+                        fontSize: 12, fontWeight: 600,
+                        color: openDia === i ? 'var(--text)' : 'var(--muted2)',
+                        lineHeight: 1.2,
+                      }}>
                         {dia.nombre?.split('—')[1]?.trim() || dia.nombre}
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--gym-muted)', marginTop: 2 }}>
+                      <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
                         {dia.ejercicios?.length || 0} ejercicios
                       </div>
                     </div>
@@ -303,16 +350,24 @@ export default function Resultados() {
                   const dia = rutina.dias[openDia]
                   return (
                     <>
-                      <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--gym-border)' }}>
-                        <h3 className="font-condensed" style={{ fontSize: 17, fontWeight: 700, letterSpacing: '0.02em' }}>
+                      <div style={{
+                        marginBottom: 14, paddingBottom: 12,
+                        borderBottom: '1px solid var(--border)',
+                      }}>
+                        <h3 style={{
+                          fontFamily: 'Barlow Condensed, sans-serif',
+                          fontSize: 17, fontWeight: 700, letterSpacing: '0.02em',
+                          color: 'var(--text)',
+                        }}>
                           {dia.nombre}
                         </h3>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                         {(dia.ejercicios || []).map((ex, j) => {
                           const isCardio = ex.grupo === 'cardio'
-                          const aColor   = isCardio ? '#60A5FA' : 'var(--gym-lime)'
-                          const series   = ex.series   || ex.series
+                          const aColor   = isCardio ? '#60A5FA' : 'var(--lime)'
+                          // Soporte para camelCase (Scala) y snake_case (Python)
+                          const series   = ex.series
                           const reps     = ex.repeticiones || ex.reps
                           const descanso = ex.descanso_seg || ex.descansoSeg || 0
                           return (
@@ -320,7 +375,7 @@ export default function Resultados() {
                               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                               padding: '11px 14px',
                               background: isCardio ? 'rgba(96,165,250,0.04)' : 'rgba(255,255,255,0.02)',
-                              border: `1px solid ${isCardio ? 'rgba(96,165,250,0.14)' : 'var(--gym-border)'}`,
+                              border: `1px solid ${isCardio ? 'rgba(96,165,250,0.14)' : 'var(--border)'}`,
                               borderRadius: 8,
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -334,24 +389,30 @@ export default function Resultados() {
                                   </span>
                                 </div>
                                 <div>
-                                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--gym-text)' }}>{ex.nombre}</div>
-                                  <div style={{ fontSize: 11, color: 'var(--gym-muted)', marginTop: 1, textTransform: 'capitalize' }}>
-                                    {ex.grupo} · {(ex.equipo || '').replace('_', ' ')}
+                                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{ex.nombre}</div>
+                                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1, textTransform: 'capitalize' }}>
+                                    {ex.grupo} · {(ex.equipo || '').replace(/_/g, ' ')}
                                   </div>
                                 </div>
                               </div>
                               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                 {!isCardio ? (
-                                  <div className="font-condensed" style={{ fontSize: 17, fontWeight: 700, color: 'var(--gym-lime)' }}>
+                                  <div style={{
+                                    fontFamily: 'Barlow Condensed, sans-serif',
+                                    fontSize: 17, fontWeight: 700, color: 'var(--lime)',
+                                  }}>
                                     {series} × {reps}
                                   </div>
                                 ) : (
-                                  <div className="font-condensed" style={{ fontSize: 17, fontWeight: 700, color: '#60A5FA' }}>
+                                  <div style={{
+                                    fontFamily: 'Barlow Condensed, sans-serif',
+                                    fontSize: 17, fontWeight: 700, color: '#60A5FA',
+                                  }}>
                                     {reps}
                                   </div>
                                 )}
                                 {descanso > 0 && (
-                                  <div style={{ fontSize: 10, color: 'var(--gym-muted)', marginTop: 2 }}>
+                                  <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
                                     {descanso}s descanso
                                   </div>
                                 )}
@@ -371,49 +432,72 @@ export default function Resultados() {
         {/* NUTRICION */}
         {tab === 'nutricion' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 14 }}>
-            <div style={{ background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: 12, padding: 22 }}>
+            <div style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 12, padding: 22,
+            }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
-                <h2 className="font-condensed" style={{ fontSize: 19, fontWeight: 700, letterSpacing: '0.02em' }}>
+                <h2 style={{
+                  fontFamily: 'Barlow Condensed, sans-serif',
+                  fontSize: 19, fontWeight: 700, letterSpacing: '0.02em',
+                  color: 'var(--text)',
+                }}>
                   Distribución de Macros
                 </h2>
                 <div>
-                  <div className="font-display" style={{ fontSize: 34, color: 'var(--gym-lime)', lineHeight: 1 }}>
+                  <div style={{
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    fontSize: 34, color: 'var(--lime)', lineHeight: 1,
+                  }}>
                     {totalKcal.toLocaleString()}
-                    <span style={{ fontSize: 13, color: 'var(--gym-muted)', fontFamily: 'Barlow, sans-serif', fontWeight: 400 }}> kcal</span>
+                    <span style={{ fontSize: 13, color: 'var(--muted)', fontFamily: 'Barlow, sans-serif', fontWeight: 400 }}> kcal</span>
                   </div>
                 </div>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--gym-muted)', marginBottom: 18 }}>
-                Calorías diarias según TDEE y objetivo ({objetivo.replace('_', ' ')})
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 18 }}>
+                Calorías diarias según tu metabolismo y objetivo ({objetivo.replace(/_/g, ' ')})
               </p>
-              <MacroBar label="Proteínas"     valor={protG}   kcal={prot.kcal}   pct={prot.pct}   color="#60A5FA"           icon="egg_alt" />
-              <MacroBar label="Carbohidratos" valor={carbsG}  kcal={carbs.kcal}  pct={carbs.pct}  color="#F59E0B"           icon="grain"   />
-              <MacroBar label="Grasas"        valor={grasasG} kcal={grasas.kcal} pct={grasas.pct} color="var(--gym-orange)" icon="opacity" />
+              <MacroBar label="Proteínas"     valor={protG}   kcal={prot.kcal}   pct={prot.pct}   color="#60A5FA"      icon="egg_alt" />
+              <MacroBar label="Carbohidratos" valor={carbsG}  kcal={carbs.kcal}  pct={carbs.pct}  color="#F59E0B"      icon="grain"   />
+              <MacroBar label="Grasas"        valor={grasasG} kcal={grasas.kcal} pct={grasas.pct} color="var(--orange)" icon="opacity" />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'BMR',   value: perfil.bmr,        sub: 'Calorías en reposo',      icon: 'bedtime',              color: '#A78BFA' },
-                { label: 'TDEE',  value: perfil.tdee,       sub: 'Calorías con actividad',   icon: 'bolt',                 color: '#F59E0B' },
-                { label: 'META',  value: totalKcal,         sub: 'Objetivo diario',          icon: 'flag',                 color: 'var(--gym-lime)' },
+                { label: 'BMR',   value: perfil.bmr,  sub: 'Calorías en reposo',    icon: 'bedtime', color: '#A78BFA' },
+                { label: 'TDEE',  value: perfil.tdee, sub: 'Calorías con actividad', icon: 'bolt',   color: '#F59E0B' },
+                { label: 'META',  value: totalKcal,   sub: 'Objetivo diario',        icon: 'flag',   color: 'var(--lime)' },
               ].map(({ label, value, sub, icon, color }) => (
-                <div key={label} style={{ background: 'var(--gym-card)', border: '1px solid var(--gym-border)', borderRadius: 10, padding: '16px 18px' }}>
+                <div key={label} style={{
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10, padding: '16px 18px',
+                }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
                     <span className="material-icons-round" style={{ fontSize: 15, color }}>{icon}</span>
-                    <span className="label-tag">{label}</span>
+                    <span style={{
+                      fontFamily: 'Barlow Condensed, sans-serif',
+                      fontSize: '11px', fontWeight: 600,
+                      letterSpacing: '0.12em', textTransform: 'uppercase',
+                      color: 'var(--muted)',
+                    }}>{label}</span>
                   </div>
-                  <div className="font-condensed" style={{ fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>
+                  <div style={{
+                    fontFamily: 'Barlow Condensed, sans-serif',
+                    fontSize: 26, fontWeight: 700, color, lineHeight: 1,
+                  }}>
                     {value}
-                    <span style={{ fontSize: 12, color: 'var(--gym-muted)', fontFamily: 'Barlow, sans-serif', fontWeight: 400, marginLeft: 4 }}>kcal</span>
+                    <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'Barlow, sans-serif', fontWeight: 400, marginLeft: 4 }}>kcal</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--gym-muted)', marginTop: 3 }}>{sub}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>{sub}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* RAZONAMIENTO PROLOG */}
+        {/* POR QUÉ ESTE PLAN (antes: PROLOG) */}
         {tab === 'prolog' && (
           <ExplicacionCard explicaciones={explicaciones} />
         )}
@@ -424,17 +508,17 @@ export default function Resultados() {
             ? <ProgressChart data={progreso} objetivo={objetivo} />
             : (
               <div style={{
-                background: 'var(--gym-card)',
-                border: '1px solid var(--gym-border)',
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
                 borderRadius: 12,
                 padding: '48px 32px',
                 textAlign: 'center',
               }}>
-                <span className="material-icons-round" style={{ fontSize: 40, color: 'var(--gym-muted)', display: 'block', marginBottom: 16 }}>
+                <span className="material-icons-round" style={{ fontSize: 40, color: 'var(--muted)', display: 'block', marginBottom: 16 }}>
                   show_chart
                 </span>
-                <p style={{ color: 'var(--gym-muted)', fontSize: 14 }}>
-                  No hay datos de progreso en este plan.
+                <p style={{ color: 'var(--muted)', fontSize: 14 }}>
+                  No hay datos de progreso disponibles en este plan.
                 </p>
               </div>
             )

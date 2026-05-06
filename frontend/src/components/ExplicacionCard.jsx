@@ -4,7 +4,8 @@ import { useState } from 'react'
 export default function ExplicacionCard({ explicaciones = [] }) {
   const [open, setOpen] = useState(true)
 
-  const cleaned = explicaciones
+  // Limpiar y filtrar explicaciones válidas
+  const cleaned = (Array.isArray(explicaciones) ? explicaciones : [])
     .map(e => (typeof e === 'string' ? e.trim() : ''))
     .filter(Boolean)
 
@@ -15,6 +16,7 @@ export default function ExplicacionCard({ explicaciones = [] }) {
       borderRadius: '12px',
       overflow: 'hidden',
     }}>
+      {/* Header del acordeón */}
       <button
         onClick={() => setOpen(!open)}
         style={{
@@ -38,61 +40,106 @@ export default function ExplicacionCard({ explicaciones = [] }) {
             borderRadius: '8px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--gym-lime)' }}>psychology</span>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--lime)' }}>lightbulb</span>
           </div>
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: '15px', letterSpacing: '0.04em', color: 'var(--gym-lime)' }}>
-              EXPLICACION DEL MOTOR PROLOG
+            <div style={{
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontWeight: 700, fontSize: '15px',
+              letterSpacing: '0.04em', color: 'var(--lime)',
+            }}>
+              POR QUÉ ESTE PLAN PARA TI
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--gym-muted)', marginTop: '2px' }}>
-              {cleaned.length} razones registradas por el sistema experto
+            <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+              {cleaned.length > 0
+                ? `${cleaned.length} decisiones analizadas por el sistema`
+                : 'El sistema analizó tu perfil completo'}
             </div>
           </div>
         </div>
         <span className="material-icons-round" style={{
           fontSize: '20px',
-          color: 'var(--gym-lime)',
+          color: 'var(--lime)',
           transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
           transition: 'transform 0.2s',
         }}>expand_more</span>
       </button>
 
+      {/* Contenido expandible */}
       {open && (
         <div style={{ padding: '0 22px 22px', borderTop: '1px solid rgba(198,241,53,0.1)' }}>
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {cleaned.map((e, i) => (
-              <div
-                key={i}
-                className={`animate-fade-up stagger-${Math.min(i + 1, 4)}`}
-                style={{
-                  display: 'flex',
-                  gap: '12px',
-                  alignItems: 'flex-start',
-                  padding: '12px 14px',
-                  background: 'rgba(255,255,255,0.02)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                }}
-              >
-                <div style={{
-                  width: '22px', height: '22px',
-                  background: 'rgba(198,241,53,0.15)',
-                  borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                  marginTop: '1px',
-                }}>
-                  <span style={{
-                    fontSize: '11px',
-                    fontFamily: 'Barlow Condensed, sans-serif',
-                    fontWeight: 700,
-                    color: 'var(--gym-lime)',
-                  }}>{i + 1}</span>
+          {cleaned.length > 0 ? (
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {cleaned.map((e, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'flex-start',
+                    padding: '12px 14px',
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.04)',
+                  }}
+                >
+                  <div style={{
+                    width: '22px', height: '22px',
+                    background: 'rgba(198,241,53,0.15)',
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, marginTop: '1px',
+                  }}>
+                    <span style={{
+                      fontSize: '11px',
+                      fontFamily: 'Barlow Condensed, sans-serif',
+                      fontWeight: 700, color: 'var(--lime)',
+                    }}>{i + 1}</span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--muted2)', lineHeight: 1.6, margin: 0 }}>{e}</p>
                 </div>
-                <p style={{ fontSize: '13px', color: 'var(--gym-muted2)', lineHeight: 1.6, margin: 0 }}>{e}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            // Fallback cuando no hay explicaciones del backend
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                'Tu nivel de entrenamiento determina la frecuencia y el tipo de rutina asignada.',
+                'Tu objetivo principal define la distribución calórica y la intensidad del trabajo.',
+                'Tu composición corporal (IMC y somatotipo) ajusta el cardio y las cargas.',
+                'Tu disponibilidad semanal define cuántos días y cómo se distribuyen los grupos musculares.',
+                'Tu rango de edad influye en la intensidad máxima recomendada para proteger tu recuperación.',
+              ].map((e, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'flex-start',
+                    padding: '12px 14px',
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.04)',
+                  }}
+                >
+                  <div style={{
+                    width: '22px', height: '22px',
+                    background: 'rgba(198,241,53,0.15)',
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, marginTop: '1px',
+                  }}>
+                    <span style={{
+                      fontSize: '11px',
+                      fontFamily: 'Barlow Condensed, sans-serif',
+                      fontWeight: 700, color: 'var(--lime)',
+                    }}>{i + 1}</span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--muted2)', lineHeight: 1.6, margin: 0 }}>{e}</p>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{
             marginTop: '14px',
@@ -103,9 +150,9 @@ export default function ExplicacionCard({ explicaciones = [] }) {
             alignItems: 'center',
             gap: '8px',
           }}>
-            <span className="material-icons-round" style={{ fontSize: '14px', color: 'var(--gym-muted)' }}>info</span>
-            <span style={{ fontSize: '11px', color: 'var(--gym-muted)', lineHeight: 1.5 }}>
-              Estas decisiones fueron tomadas automaticamente por el motor de inferencia Prolog basado en tu perfil fisico y objetivo.
+            <span className="material-icons-round" style={{ fontSize: '14px', color: 'var(--muted)' }}>info</span>
+            <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.5 }}>
+              Estas decisiones fueron tomadas automáticamente por el sistema experto basado en tu perfil físico y objetivo personal.
             </span>
           </div>
         </div>
