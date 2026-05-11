@@ -731,3 +731,221 @@ INFO: Unsupported notification method: $/setTrace
 2026.05.06 19:17:28 INFO  Memory monitor stopped
 2026.05.06 19:17:28 INFO  shutting down Metals
 2026.05.06 19:17:28 INFO  Exiting server
+2026.05.07 10:45:36 INFO  Started: Metals version 1.6.7 in folders 'C:\Users\Jherson Silva\gym-ai-system' for client Visual Studio Code 1.119.0.
+2026.05.07 10:45:36 INFO  Memory monitor started
+2026.05.07 10:45:38 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
+2026.05.07 10:45:44 WARN  no build tool detected in workspace 'C:\Users\Jherson Silva\gym-ai-system'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 
+2026.05.07 10:45:44 WARN  Build server is not auto-connectable.
+2026.05.07 11:16:33 INFO  Shutting down server
+2026.05.07 11:16:33 INFO  Memory monitor stopped
+2026.05.07 11:16:33 INFO  shutting down Metals
+2026.05.07 11:16:33 INFO  Exiting server
+2026.05.07 23:53:47 INFO  Started: Metals version 1.6.7 in folders 'C:\Users\Jherson Silva\gym-ai-system' for client Visual Studio Code 1.119.0.
+2026.05.07 23:53:51 INFO  Memory monitor started
+2026.05.07 23:53:52 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
+may 07, 2026 11:53:53 P. M. org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFO: Unsupported notification method: $/setTrace
+2026.05.07 23:53:58 WARN  no build tool detected in workspace 'C:\Users\Jherson Silva\gym-ai-system'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 
+2026.05.07 23:53:58 WARN  Build server is not auto-connectable.
+may 07, 2026 11:55:26 P. M. org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFO: Unsupported notification method: $/setTrace
+may 07, 2026 11:55:30 P. M. org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFO: Unsupported notification method: $/setTrace
+2026.05.07 23:58:48 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala
+2026.05.07 23:58:48 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:48 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:51 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:51 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:51 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 07, 2026 11:58:51 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 10
+2026.05.07 23:58:51 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:51 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:51 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 07, 2026 11:58:51 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 7
+2026.05.07 23:58:53 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:53 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:53 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:54 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala
+2026.05.07 23:58:55 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:58:56 INFO  time: code lens generation in 4.87s
+2026.05.07 23:58:56 INFO  time: code lens generation in 2.54s
+2026.05.07 23:58:56 INFO  time: code lens generation in 4.94s
+2026.05.07 23:58:56 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:10 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:10 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala
+2026.05.07 23:59:10 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 07, 2026 11:59:11 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 32
+2026.05.07 23:59:10 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 07, 2026 11:59:11 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 36
+2026.05.07 23:59:10 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:10 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 07, 2026 11:59:11 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 38
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 07, 2026 11:59:12 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 39
+may 07, 2026 11:59:12 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 41
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 07, 2026 11:59:12 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 45
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:12 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:11 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:12 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:13 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala
+2026.05.07 23:59:13 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:22 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:22 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt
+2026.05.07 23:59:22 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:22 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+may 07, 2026 11:59:22 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 59
+2026.05.07 23:59:22 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:22 WARN  Could not find semantic tokens for: file:///C:/Users/Jherson%20Silva/gym-ai-system/backend/scala/build.sbt
+2026.05.07 23:59:22 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:23 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:23 WARN  Could not find semantic tokens for: file:///C:/Users/Jherson%20Silva/gym-ai-system/backend/scala/build.sbt
+2026.05.07 23:59:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:46 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:46 WARN  Could not find semantic tokens for: file:///C:/Users/Jherson%20Silva/gym-ai-system/backend/scala/build.sbt
+2026.05.07 23:59:46 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt
+2026.05.07 23:59:46 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.07 23:59:46 WARN  Could not find semantic tokens for: file:///C:/Users/Jherson%20Silva/gym-ai-system/backend/scala/build.sbt
+2026.05.08 00:01:48 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.08 00:02:10 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.08 00:02:22 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\build.sbt. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.08 00:06:50 INFO  Shutting down server
+2026.05.08 00:06:50 INFO  Memory monitor stopped
+2026.05.08 00:06:50 INFO  shutting down Metals
+2026.05.08 00:06:50 INFO  Exiting server
+2026.05.11 17:45:31 INFO  Started: Metals version 1.6.7 in folders 'C:\Users\Jherson Silva\gym-ai-system' for client Visual Studio Code 1.119.0.
+2026.05.11 17:45:31 INFO  Memory monitor started
+2026.05.11 17:45:34 WARN  Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
+2026.05.11 17:45:46 WARN  no build tool detected in workspace 'C:\Users\Jherson Silva\gym-ai-system'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 
+2026.05.11 17:45:46 WARN  Build server is not auto-connectable.
+2026.05.11 17:48:05 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala
+2026.05.11 17:48:05 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:48:05 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:48:09 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala
+2026.05.11 17:48:09 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:48:09 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:48:09 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:48:09 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 11, 2026 5:48:09 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 7
+may 11, 2026 5:48:09 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 10
+2026.05.11 17:48:17 INFO  time: code lens generation in 7.72s
+2026.05.11 17:48:18 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:17 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:17 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala
+2026.05.11 17:50:17 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:17 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:18 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:18 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:18 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:18 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:18 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 11, 2026 5:50:19 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 24
+2026.05.11 17:50:18 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:20 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala
+2026.05.11 17:50:20 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:20 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:36 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:36 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala
+2026.05.11 17:50:36 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 11, 2026 5:50:37 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 32
+2026.05.11 17:50:36 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:37 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:36 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:37 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:37 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:37 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:37 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:37 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:37 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:39 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:39 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala
+2026.05.11 17:50:39 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:41 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:41 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:41 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:42 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala
+2026.05.11 17:50:42 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:42 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:42 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:42 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:42 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 11, 2026 5:50:46 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 70
+2026.05.11 17:50:45 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:46 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:47 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala
+2026.05.11 17:50:47 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:50:48 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:26 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:26 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala
+2026.05.11 17:52:26 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:26 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:26 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:26 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:27 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:26 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:26 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:27 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 11, 2026 5:52:27 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 98
+2026.05.11 17:52:27 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:27 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala
+may 11, 2026 5:52:28 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 108
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala
+may 11, 2026 5:52:28 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 109
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 11, 2026 5:52:28 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 111
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+may 11, 2026 5:52:29 P. M. org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 120
+2026.05.11 17:52:29 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:28 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:29 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:30 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:29 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:30 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:52:30 WARN  no build target for: C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala
+2026.05.11 17:52:37 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\EjercicioRepository.scala. Using presentation compiler with project's scala-library version: 3.3.7
+2026.05.11 17:53:36 INFO  no build target found for C:\Users\Jherson Silva\gym-ai-system\backend\scala\RutinaGenerator.scala. Using presentation compiler with project's scala-library version: 3.3.7

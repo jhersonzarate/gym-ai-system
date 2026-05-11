@@ -1,24 +1,61 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# ─── Entorno y secretos ───────────────────────────────────────────
+.env
+.env.local
+.env.*.local
 
-node_modules
-dist
-dist-ssr
+# ─── Python ───────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# ─── Scala / SBT ──────────────────────────────────────────────────
+target/
+.bsp/
+.metals/
+.bloop/
+project/target/
+project/project/
+*.class
+*.jar
+*.war
+
+# ─── Node / Frontend ──────────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
 *.local
 
-# Editor directories and files
+# ─── IDEs ─────────────────────────────────────────────────────────
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
+
+# ─── Logs ─────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Prolog compilado ─────────────────────────────────────────────
+*.qlf
+
+# ─── Build artifacts ──────────────────────────────────────────────
+*.local
+.scala-build/

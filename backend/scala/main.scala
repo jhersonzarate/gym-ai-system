@@ -1,4 +1,6 @@
-// backend/scala/src/main/scala/Main.scala
+// backend/scala/main.scala
+// CORRECCIÓN: el mainClass en build.sbt apunta a "gymexpert.Main"
+// así que el objeto debe vivir en el package gymexpert.
 package gymexpert
 
 import play.api.libs.json._
@@ -9,7 +11,12 @@ object Main extends App {
     .takeWhile(_ != null)
     .mkString("\n")
 
-  val json = Json.parse(input)
+  if (input.trim.isEmpty) {
+    System.err.println("[ERROR] No se recibió input JSON por stdin.")
+    System.exit(1)
+  }
+
+  val json   = Json.parse(input)
   val rutina = RutinaGenerator.generar(json)
 
   import RutinaGenerator._

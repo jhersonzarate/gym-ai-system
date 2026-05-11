@@ -1,5 +1,5 @@
 // backend/scala/EjercicioRepository.scala
-// VERSIÓN CORREGIDA:
+// VERSIÓN CORREGIDA v2:
 //   - Niveles mínimos reales según estándares NSCA/ACE
 //   - Campo 'tipo' para ordenar compuestos antes que accesorios
 //   - Campo 'contraindicaciones' para filtrar por IMC/condición
@@ -11,12 +11,12 @@
 package gymexpert
 
 case class Ejercicio(
-  nombre:           String,
-  grupo:            String,
-  equipo:           String,
-  nivelMinimo:      String,   // principiante | intermedio | avanzado
-  tipo:             String,   // compuesto | accesorio | aislamiento | cardio | core
-  contraindicaciones: List[String] = List()  // obesidad | rodilla | lumbar | hombro
+  nombre:             String,
+  grupo:              String,
+  equipo:             String,
+  nivelMinimo:        String,                    // principiante | intermedio | avanzado
+  tipo:               String  = "compuesto",     // compuesto | accesorio | aislamiento | cardio | core
+  contraindicaciones: List[String] = List()      // obesidad | rodilla | lumbar | hombro | codo
 )
 
 object EjercicioRepository {
@@ -27,7 +27,6 @@ object EjercicioRepository {
     // PECHO
     // ═══════════════════════════════════════════
 
-    // Compuestos — van PRIMERO en la sesión
     Ejercicio("Press de banca plano",
       "pecho", "barra", "principiante", "compuesto"),
 
@@ -41,7 +40,6 @@ object EjercicioRepository {
     Ejercicio("Press de banca con agarre cerrado",
       "pecho", "barra", "intermedio", "compuesto"),
 
-    // Accesorios
     Ejercicio("Aperturas con mancuernas en banco plano",
       "pecho", "mancuernas", "principiante", "accesorio"),
 
@@ -51,7 +49,6 @@ object EjercicioRepository {
     Ejercicio("Aperturas en polea cruzada baja",
       "pecho", "polea", "intermedio", "accesorio"),
 
-    // CORRECCIÓN: Fondos en paralelas → intermedio (requiere control escapular)
     Ejercicio("Fondos en paralelas",
       "pecho", "peso_corporal", "intermedio", "compuesto",
       List("hombro", "codo")),
@@ -63,9 +60,6 @@ object EjercicioRepository {
     // ESPALDA
     // ═══════════════════════════════════════════
 
-    // Compuestos
-    // CORRECCIÓN CRÍTICA: peso muerto convencional → intermedio
-    // Requiere movilidad de cadera, control de columna y técnica consolidada
     Ejercicio("Peso muerto convencional",
       "espalda", "barra", "intermedio", "compuesto",
       List("lumbar", "rodilla")),
@@ -74,22 +68,18 @@ object EjercicioRepository {
       "espalda", "barra", "intermedio", "compuesto",
       List("lumbar", "rodilla")),
 
-    // CORRECCIÓN: Dominadas completas → intermedio
-    // Para principiantes: jalón al pecho como alternativa
     Ejercicio("Dominadas agarre prono",
       "espalda", "peso_corporal", "intermedio", "compuesto"),
 
     Ejercicio("Dominadas agarre supino (chin-up)",
       "espalda", "peso_corporal", "intermedio", "compuesto"),
 
-    // Estas SÍ son para principiantes (máquina asiste el movimiento)
     Ejercicio("Jalón al pecho agarre ancho",
       "espalda", "polea", "principiante", "compuesto"),
 
     Ejercicio("Jalón al pecho agarre estrecho",
       "espalda", "polea", "principiante", "compuesto"),
 
-    // Accesorios
     Ejercicio("Remo con mancuerna a una mano",
       "espalda", "mancuernas", "principiante", "accesorio"),
 
@@ -110,7 +100,6 @@ object EjercicioRepository {
     // HOMBROS
     // ═══════════════════════════════════════════
 
-    // Compuestos
     Ejercicio("Press militar con barra de pie",
       "hombros", "barra", "intermedio", "compuesto",
       List("lumbar")),
@@ -118,12 +107,10 @@ object EjercicioRepository {
     Ejercicio("Press con mancuernas sentado",
       "hombros", "mancuernas", "principiante", "compuesto"),
 
-    // CORRECCIÓN: Arnold press → avanzado (movimiento complejo de rotación)
     Ejercicio("Arnold press",
       "hombros", "mancuernas", "avanzado", "compuesto",
       List("hombro")),
 
-    // Aislamiento
     Ejercicio("Elevaciones laterales con mancuernas",
       "hombros", "mancuernas", "principiante", "aislamiento"),
 
@@ -162,7 +149,6 @@ object EjercicioRepository {
     // TRÍCEPS
     // ═══════════════════════════════════════════
 
-    // CORRECCIÓN: Skull crusher → avanzado (alta carga articular en codo)
     Ejercicio("Skull crusher con barra EZ",
       "triceps", "barra", "avanzado", "accesorio",
       List("codo")),
@@ -188,7 +174,6 @@ object EjercicioRepository {
     // PIERNAS
     // ═══════════════════════════════════════════
 
-    // Compuestos — prioridad máxima en la sesión de piernas
     Ejercicio("Sentadilla con barra espalda",
       "piernas", "barra", "principiante", "compuesto",
       List("rodilla", "lumbar")),
@@ -211,7 +196,6 @@ object EjercicioRepository {
     Ejercicio("Hip thrust con mancuerna",
       "piernas", "mancuernas", "principiante", "compuesto"),
 
-    // CORRECCIÓN: Sentadilla búlgara → avanzado (requiere equilibrio y movilidad)
     Ejercicio("Sentadilla búlgara con mancuernas",
       "piernas", "mancuernas", "avanzado", "compuesto",
       List("rodilla")),
@@ -224,7 +208,6 @@ object EjercicioRepository {
       "piernas", "barra", "intermedio", "accesorio",
       List("rodilla", "lumbar")),
 
-    // Aislamiento piernas
     Ejercicio("Extensión de cuádriceps en máquina",
       "piernas", "maquina", "principiante", "aislamiento",
       List("rodilla")),
@@ -248,7 +231,6 @@ object EjercicioRepository {
     // CORE
     // ═══════════════════════════════════════════
 
-    // CORRECCIÓN: plancha → isométrico con segundos, no reps numéricas
     Ejercicio("Plancha abdominal isométrica",
       "core", "peso_corporal", "principiante", "core"),
 
@@ -284,7 +266,6 @@ object EjercicioRepository {
     // CARDIO
     // ═══════════════════════════════════════════
 
-    // LISS — bajo impacto, para todos los niveles y IMC
     Ejercicio("Caminata en cinta inclinada (LISS)",
       "cardio", "cinta", "principiante", "cardio"),
 
@@ -294,7 +275,6 @@ object EjercicioRepository {
     Ejercicio("Elíptica ritmo moderado",
       "cardio", "eliptica", "principiante", "cardio"),
 
-    // HIIT — CORRECCIÓN: solo intermedio+, no para principiantes ni obesidad
     Ejercicio("HIIT en cinta (intervalos 30/30)",
       "cardio", "cinta", "intermedio", "cardio",
       List("obesidad", "rodilla")),
@@ -303,7 +283,6 @@ object EjercicioRepository {
       "cardio", "bicicleta", "intermedio", "cardio",
       List("obesidad")),
 
-    // CORRECCIÓN: Salto a la cuerda → intermedio, contraindicado en obesidad
     Ejercicio("Salto a la cuerda",
       "cardio", "cuerda", "intermedio", "cardio",
       List("obesidad", "rodilla"))
@@ -327,7 +306,6 @@ object EjercicioRepository {
   def porGrupoYNivel(grupo: String, nivel: String): List[Ejercicio] =
     porGrupo(grupo).filter(e => porNivel(nivel).contains(e))
 
-  // NUEVO: filtrar también por contraindicaciones
   def porGrupoNivelSinContraind(
     grupo: String,
     nivel: String,
@@ -336,15 +314,12 @@ object EjercicioRepository {
     porGrupoYNivel(grupo, nivel)
       .filter(e => e.contraindicaciones.intersect(contraindicaciones).isEmpty)
 
-  // NUEVO: obtener solo los compuestos de un grupo (para priorizar al inicio)
   def compuestosPorGrupoYNivel(grupo: String, nivel: String): List[Ejercicio] =
     porGrupoYNivel(grupo, nivel).filter(_.tipo == "compuesto")
 
-  // NUEVO: obtener accesorios/aislamiento (para el final de la sesión)
   def accesoriosPorGrupoYNivel(grupo: String, nivel: String): List[Ejercicio] =
     porGrupoYNivel(grupo, nivel).filter(e => e.tipo == "accesorio" || e.tipo == "aislamiento")
 
-  // NUEVO: cardio apropiado según nivel e IMC
   def cardioApropiado(nivel: String, imcCat: String): List[Ejercicio] = {
     val contrainds = if (imcCat == "obesidad") List("obesidad") else List()
     porGrupoNivelSinContraind("cardio", nivel, contrainds)

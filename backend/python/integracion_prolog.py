@@ -1,30 +1,27 @@
 # backend/python/integracion_prolog.py
 import subprocess
 import os
-import json
-import re
 import tempfile
 
 PROLOG_DIR = os.path.join(os.path.dirname(__file__), "../prolog")
-# Normalizar separadores para cualquier OS
 PROLOG_DIR = os.path.normpath(PROLOG_DIR)
+
 
 def consultar_prolog(perfil: dict) -> dict:
     """
     Genera una consulta Prolog a partir del perfil del usuario
     y ejecuta el motor de inferencia.
+    CORRECCIÓN: usa frecuencia_ajustada/4 (ahora recibe CatEdad).
     """
-    edad      = perfil["edad"]
-    nivel     = perfil["nivel"]
-    objetivo  = perfil["objetivo"]
-    dias      = perfil["dias_disponibles"]
-    imc_cat   = perfil["imc_categoria"]
+    edad       = perfil["edad"]
+    nivel      = perfil["nivel"]
+    objetivo   = perfil["objetivo"]
+    dias       = perfil["dias_disponibles"]
+    imc_cat    = perfil["imc_categoria"]
     somatotipo = perfil["somatotipo"]
 
-    # Normalizar paths para Prolog (usar / en lugar de \ para compatibilidad)
     prolog_dir_norm = PROLOG_DIR.replace("\\", "/")
 
-    # Construir consulta dinámica
     query = f"""
 :- consult('{prolog_dir_norm}/hechos.pl').
 :- consult('{prolog_dir_norm}/reglas.pl').
@@ -45,7 +42,6 @@ def consultar_prolog(perfil: dict) -> dict:
     halt.
 """
 
-    # Usar tempfile para compatibilidad Windows/Linux/Mac
     try:
         with tempfile.NamedTemporaryFile(
             mode='w', suffix='.pl', delete=False, encoding='utf-8'
@@ -56,7 +52,6 @@ def consultar_prolog(perfil: dict) -> dict:
         return _resultado_fallback(perfil)
 
     try:
-        # Normalizar path del archivo temporal para Prolog
         query_file_norm = query_file.replace("\\", "/")
 
         result = subprocess.run(
@@ -67,43 +62,38 @@ def consultar_prolog(perfil: dict) -> dict:
         )
         output = result.stdout + result.stderr
 
-        # Limpiar archivo temporal
         try:
             os.unlink(query_file)
         except Exception:
             pass
 
-        # Si hay error o no hay salida, usar fallback
         if result.returncode != 0 or not output.strip():
             return _resultado_fallback(perfil)
 
         parsed = _parsear_salida_prolog(output)
 
-        # Si no se parsearon explicaciones, usar fallback
         if not parsed.get("explicacion") or len(parsed["explicacion"]) == 0:
             return _resultado_fallback(perfil)
 
         return parsed
 
     except subprocess.TimeoutExpired:
-        try:
-            os.unlink(query_file)
-        except Exception:
-            pass
+        _limpiar(query_file)
         return _resultado_fallback(perfil)
     except FileNotFoundError:
         # SWI-Prolog no instalado
-        try:
-            os.unlink(query_file)
-        except Exception:
-            pass
+        _limpiar(query_file)
         return _resultado_fallback(perfil)
     except Exception:
-        try:
-            os.unlink(query_file)
-        except Exception:
-            pass
+        _limpiar(query_file)
         return _resultado_fallback(perfil)
+
+
+def _limpiar(path: str):
+    try:
+        os.unlink(path)
+    except Exception:
+        pass
 
 
 def _parsear_salida_prolog(output: str) -> dict:
@@ -152,7 +142,11 @@ def _parsear_salida_prolog(output: str) -> dict:
 
 
 def _resultado_fallback(perfil: dict) -> dict:
-    """Lógica fallback en Python si Prolog no está disponible o instalado."""
+    """
+    Lógica fallback en Python si Prolog no está disponible.
+    CORRECCIÓN: alineada con las reglas de Prolog (incluyendo
+    ajuste de frecuencia por edad mayor).
+    """
     nivel      = perfil.get("nivel", "principiante")
     objetivo   = perfil.get("objetivo", "mantener")
     dias       = perfil.get("dias_disponibles", 3)
@@ -160,7 +154,10 @@ def _resultado_fallback(perfil: dict) -> dict:
     somatotipo = perfil.get("somatotipo", "mesomorfo")
     edad       = perfil.get("edad", 25)
 
-    # Determinar tipo y frecuencia
+    # Clasificar edad
+    cat_edad = "joven" if edad < 30 else ("adulto" if edad < 50 else "mayor")
+
+    # Determinar tipo y frecuencia base
     if nivel == "principiante":
         tipo = "fullbody"
         frecuencia = min(dias, 3)
@@ -174,22 +171,31 @@ def _resultado_fallback(perfil: dict) -> dict:
             tipo = "torso_pierna"
         frecuencia = min(dias, 5)
         intensidad = "moderada"
-    else:
-        if dias <= 4:
+    else:  # avanzado
+        if dias <= 3:
             tipo = "upper_lower"
-        elif dias >= 6 and objetivo == "ganar_musculo":
+        elif dias <= 5:
+            tipo = "ppl"
+        elif objetivo == "ganar_musculo":
             tipo = "especializado"
         else:
-            tipo = "ppl"
+            tipo = "torso_pierna"
         frecuencia = min(dias, 6)
         intensidad = "alta"
 
-    # Ajuste por IMC
+    # CORRECCIÓN: ajuste de frecuencia por IMC + edad (replicando Prolog)
+    if imc_cat == "obesidad" and cat_edad == "mayor":
+        frecuencia = min(frecuencia, 2)
+    elif imc_cat == "obesidad":
+        frecuencia = min(frecuencia, 3)
+    elif cat_edad == "mayor":
+        frecuencia = min(frecuencia, 4)
+
+    # Ajuste de intensidad por IMC
     usa_cardio = False
     if imc_cat == "obesidad":
         intensidad = "baja"
         usa_cardio = True
-        frecuencia = min(frecuencia, 3)
     elif imc_cat == "sobrepeso":
         usa_cardio = True
 
@@ -198,8 +204,8 @@ def _resultado_fallback(perfil: dict) -> dict:
     elif objetivo == "ganar_musculo" and imc_cat in ("normal", "bajo_peso"):
         usa_cardio = False
 
-    # Ajuste por edad
-    if edad >= 50:
+    # Ajuste de intensidad por edad (replicando Prolog)
+    if cat_edad == "mayor":
         if intensidad == "muy_alta":
             intensidad = "alta"
         elif intensidad == "alta":
@@ -225,7 +231,9 @@ def _resultado_fallback(perfil: dict) -> dict:
         "mantener":      "Objetivo mantenimiento: equilibrio entre ingesta y gasto energético",
     }
     explicaciones.append(obj_map.get(objetivo, ""))
-    explicaciones.append(f"Disponibilidad de {dias} días — se asignan {frecuencia} sesiones semanales")
+    explicaciones.append(
+        f"Disponibilidad de {dias} días — se asignan {frecuencia} sesiones semanales"
+    )
 
     imc_map = {
         "bajo_peso": "IMC bajo: se prioriza ganancia de masa muscular y densidad calórica",
@@ -254,14 +262,22 @@ def _resultado_fallback(perfil: dict) -> dict:
 
     if usa_cardio:
         if objetivo == "perder_grasa":
-            explicaciones.append("Cardio incluido: esencial para ampliar déficit calórico en objetivo de pérdida de grasa")
+            explicaciones.append(
+                "Cardio incluido: esencial para ampliar déficit calórico en objetivo de pérdida de grasa"
+            )
         else:
-            explicaciones.append("Cardio incluido: beneficioso para salud metabólica y recuperación")
+            explicaciones.append(
+                "Cardio incluido: beneficioso para salud metabólica y recuperación"
+            )
     else:
         if objetivo == "ganar_musculo":
-            explicaciones.append("Cardio omitido: se maximiza superávit calórico para síntesis proteica muscular")
+            explicaciones.append(
+                "Cardio omitido: se maximiza superávit calórico para síntesis proteica muscular"
+            )
         else:
-            explicaciones.append("Cardio no prioritario: el enfoque está en fuerza y composición corporal")
+            explicaciones.append(
+                "Cardio no prioritario: el enfoque está en fuerza y composición corporal"
+            )
 
     soma_map = {
         "ectomorfo": "Somatotipo ectomorfo: metabolismo rápido — alta ingesta calórica y volumen moderado",
@@ -270,21 +286,19 @@ def _resultado_fallback(perfil: dict) -> dict:
     }
     explicaciones.append(soma_map.get(somatotipo, ""))
 
-    edad_cat = "joven" if edad < 30 else ("adulto" if edad < 50 else "mayor")
     edad_map = {
         "joven":  "Rango etario joven: capacidad de recuperación alta, puede tolerar mayor frecuencia",
         "adulto": "Rango etario adulto: equilibrio entre carga y recuperación, descanso prioritario",
-        "mayor":  "Rango etario mayor: se reduce intensidad máxima para proteger sistema osteoarticular",
+        "mayor":  "Rango etario mayor: se reduce intensidad máxima y frecuencia para proteger sistema osteoarticular",
     }
-    explicaciones.append(edad_map.get(edad_cat, ""))
+    explicaciones.append(edad_map.get(cat_edad, ""))
 
-    # Filtrar vacíos
     explicaciones = [e for e in explicaciones if e]
 
     return {
-        "frecuencia": frecuencia,
+        "frecuencia":  frecuencia,
         "tipo_rutina": tipo,
-        "intensidad": intensidad,
-        "usa_cardio": usa_cardio,
+        "intensidad":  intensidad,
+        "usa_cardio":  usa_cardio,
         "explicacion": explicaciones
     }

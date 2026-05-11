@@ -8,9 +8,10 @@ libraryDependencies ++= Seq(
 )
 
 assembly / assemblyJarName := "gym-rutina-generator.jar"
-assembly / mainClass := Some("Main")
+assembly / mainClass       := Some("gymexpert.Main")
 
-assemblyMergeStrategy in assembly := {
+// CORRECCIÓN: sintaxis nueva de sbt-assembly (la antigua `in assembly` está deprecada)
+assembly / assemblyMergeStrategy := {
   case PathList("META-INF", _*) => MergeStrategy.discard
   case _                        => MergeStrategy.first
 }

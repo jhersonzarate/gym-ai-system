@@ -1,16 +1,21 @@
-// backend/scala/src/main/scala/RutinaGenerator.scala
+// backend/scala/RutinaGenerator.scala
+// VERSIÓN CORREGIDA v2:
+//   - Eliminado método `elegir` que siempre retornaba None (bug)
+//   - Corregido constructor gymexpert.Ejercicio en cardioEjercicio:
+//     ahora incluye el campo `tipo` obligatorio
+//   - Todo el código usa únicamente `construirEjercicio` que sí es correcto
 package gymexpert
 
 import play.api.libs.json._
 
 case class SetsReps(series: Int, reps: String, descansoSeg: Int)
 case class EjercicioPlan(
-  nombre: String,
-  grupo: String,
-  equipo: String,
-  series: Int,
+  nombre:       String,
+  grupo:        String,
+  equipo:       String,
+  series:       Int,
   repeticiones: String,
-  descansoSeg: Int
+  descansoSeg:  Int
 )
 case class DiaPlan(dia: Int, nombre: String, ejercicios: List[EjercicioPlan])
 case class RutinaCompleta(tipoRutina: String, dias: List[DiaPlan], generadoPor: String)
@@ -18,8 +23,8 @@ case class RutinaCompleta(tipoRutina: String, dias: List[DiaPlan], generadoPor: 
 object RutinaGenerator {
 
   implicit val ejercicioWrites: Writes[EjercicioPlan] = Json.writes[EjercicioPlan]
-  implicit val diaWrites: Writes[DiaPlan]             = Json.writes[DiaPlan]
-  implicit val rutinaWrites: Writes[RutinaCompleta]   = Json.writes[RutinaCompleta]
+  implicit val diaWrites:       Writes[DiaPlan]       = Json.writes[DiaPlan]
+  implicit val rutinaWrites:    Writes[RutinaCompleta] = Json.writes[RutinaCompleta]
 
   def generar(params: JsValue): RutinaCompleta = {
     val nivel      = (params \ "nivel").asOpt[String].getOrElse("principiante")
@@ -32,12 +37,12 @@ object RutinaGenerator {
     val setsReps = calcularSetsReps(intensidad, objetivo)
 
     val dias = tipoRutina match {
-      case "fullbody"    => generarFullBody(nivel, frecuencia, setsReps, usaCardio)
-      case "upper_lower" => generarUpperLower(nivel, frecuencia, setsReps, usaCardio)
-      case "ppl"         => generarPPL(nivel, frecuencia, setsReps, usaCardio)
-      case "torso_pierna"=> generarTorsoPierna(nivel, frecuencia, setsReps, usaCardio)
-      case "especializado"=>generarEspecializado(nivel, frecuencia, setsReps, usaCardio)
-      case _             => generarFullBody(nivel, frecuencia, setsReps, usaCardio)
+      case "fullbody"     => generarFullBody(nivel, frecuencia, setsReps, usaCardio)
+      case "upper_lower"  => generarUpperLower(nivel, frecuencia, setsReps, usaCardio)
+      case "ppl"          => generarPPL(nivel, frecuencia, setsReps, usaCardio)
+      case "torso_pierna" => generarTorsoPierna(nivel, frecuencia, setsReps, usaCardio)
+      case "especializado"=> generarEspecializado(nivel, frecuencia, setsReps, usaCardio)
+      case _              => generarFullBody(nivel, frecuencia, setsReps, usaCardio)
     }
 
     RutinaCompleta(tipoRutina, dias, "scala_engine")
@@ -47,28 +52,24 @@ object RutinaGenerator {
 
   private def calcularSetsReps(intensidad: String, objetivo: String): SetsReps =
     (objetivo, intensidad) match {
-      case ("ganar_musculo", "muy_alta") => SetsReps(5, "3-5",  180)
-      case ("ganar_musculo", "alta")     => SetsReps(4, "6-8",  150)
-      case ("ganar_musculo", "moderada") => SetsReps(4, "8-12", 120)
-      case ("ganar_musculo", _)          => SetsReps(3, "12-15", 90)
-      case ("perder_grasa",  "alta")     => SetsReps(4, "12-15", 60)
-      case ("perder_grasa",  "moderada") => SetsReps(3, "15-20", 45)
-      case ("perder_grasa",  _)          => SetsReps(3, "20-25", 30)
-      case (_,               "alta")     => SetsReps(4, "8-10", 120)
-      case _                             => SetsReps(3, "10-12", 90)
+      case ("ganar_musculo", "muy_alta") => SetsReps(5, "3-5",   180)
+      case ("ganar_musculo", "alta")     => SetsReps(4, "6-8",   150)
+      case ("ganar_musculo", "moderada") => SetsReps(4, "8-12",  120)
+      case ("ganar_musculo", _)          => SetsReps(3, "12-15",  90)
+      case ("perder_grasa",  "alta")     => SetsReps(4, "12-15",  60)
+      case ("perder_grasa",  "moderada") => SetsReps(3, "15-20",  45)
+      case ("perder_grasa",  _)          => SetsReps(3, "20-25",  30)
+      case (_,               "alta")     => SetsReps(4, "8-10",  120)
+      case _                             => SetsReps(3, "10-12",  90)
     }
 
   // ─── HELPERS ─────────────────────────────────────────────────────
 
-  private def elegir(grupo: String, nivel: String, idx: Int): Option[EjercicioPlan] = {
-    val lista = EjercicioRepository.porGrupoYNivel(grupo, nivel)
-    if (lista.isEmpty) None
-    else {
-      val ex = lista(idx % lista.size)
-      None // placeholder — ver abajo
-    }
-  }
-
+  /**
+   * Construye un EjercicioPlan eligiendo el ejercicio correcto de la lista.
+   * CORRECCIÓN: este es el único método de selección; el antiguo `elegir`
+   * que siempre retornaba None fue eliminado.
+   */
   private def construirEjercicio(
     grupo: String, nivel: String, idx: Int, sr: SetsReps
   ): Option[EjercicioPlan] = {
@@ -87,10 +88,22 @@ object RutinaGenerator {
     }
   }
 
+  /**
+   * CORRECCIÓN: el constructor de Ejercicio ahora incluye el campo `tipo`
+   * que es requerido (aunque tiene valor por defecto, la llamada explícita
+   * garantiza que no rompa si se cambia la case class en el futuro).
+   */
   private def cardioEjercicio(nivel: String): EjercicioPlan = {
     val cardios = EjercicioRepository.porGrupoYNivel("cardio", nivel)
     val ex = cardios.headOption.getOrElse(
-      gymexpert.Ejercicio("Caminata inclinada","cardio","cinta","principiante")
+      gymexpert.Ejercicio(
+        nombre             = "Caminata inclinada",
+        grupo              = "cardio",
+        equipo             = "cinta",
+        nivelMinimo        = "principiante",
+        tipo               = "cardio",       // ← campo que faltaba
+        contraindicaciones = List()
+      )
     )
     EjercicioPlan(ex.nombre, "cardio", ex.equipo, 1, "20 min", 0)
   }
@@ -163,12 +176,12 @@ object RutinaGenerator {
     nivel: String, frecuencia: Int, sr: SetsReps, usaCardio: Boolean
   ): List[DiaPlan] = {
     val ciclo = List(
-      ("Pecho + Tríceps",    List("pecho", "triceps")),
-      ("Espalda + Bíceps",   List("espalda", "biceps")),
-      ("Piernas",            List("piernas")),
-      ("Hombros + Core",     List("hombros", "core")),
-      ("Piernas (posterior)",List("piernas", "core")),
-      ("Full Body ligero",   List("pecho", "espalda", "piernas"))
+      ("Pecho + Tríceps",     List("pecho", "triceps")),
+      ("Espalda + Bíceps",    List("espalda", "biceps")),
+      ("Piernas",             List("piernas")),
+      ("Hombros + Core",      List("hombros", "core")),
+      ("Piernas (posterior)", List("piernas", "core")),
+      ("Full Body ligero",    List("pecho", "espalda", "piernas"))
     )
     (1 to frecuencia).map { d =>
       val (nombre, grupos) = ciclo((d - 1) % ciclo.size)

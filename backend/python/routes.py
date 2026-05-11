@@ -1,6 +1,6 @@
 # backend/python/routes.py
 from fastapi import APIRouter, HTTPException, Depends, Header
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 import json
 
@@ -18,22 +18,22 @@ router = APIRouter()
 # ─── MODELOS ──────────────────────────────────────────────────────────────────
 
 class RegistroRequest(BaseModel):
-    nombre: str
+    nombre: str = Field(min_length=2, max_length=100)
     email: EmailStr
-    password: str
+    password: str = Field(min_length=6, max_length=128)
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1)
 
 class PerfilRequest(BaseModel):
-    edad: int
-    peso: float
-    altura: float        # en cm (el frontend ya lo normaliza)
-    sexo: str            # masculino | femenino
-    nivel: str           # principiante | intermedio | avanzado
-    objetivo: str        # perder_grasa | ganar_musculo | mantener
-    dias_disponibles: int
+    edad: int             = Field(ge=15,  le=80,  description="Edad entre 15 y 80 años")
+    peso: float           = Field(gt=30,  lt=300, description="Peso en kg (30–300)")
+    altura: float         = Field(gt=100, lt=250, description="Altura en cm (100–250)")
+    sexo: str             = Field(pattern="^(masculino|femenino)$")
+    nivel: str            = Field(pattern="^(principiante|intermedio|avanzado)$")
+    objetivo: str         = Field(pattern="^(perder_grasa|ganar_musculo|mantener)$")
+    dias_disponibles: int = Field(ge=2, le=7, description="Días disponibles (2–7)")
 
 # ─── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -100,7 +100,12 @@ def login(data: LoginRequest):
 def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
     # 1. Cálculos físicos
     altura_m = perfil.altura / 100
-    imc = calcular_imc(perfil.peso, altura_m)
+
+    try:
+        imc = calcular_imc(perfil.peso, altura_m)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
     imc_cat = clasificar_imc(imc)
     bmr = calcular_bmr(perfil.peso, perfil.altura, perfil.edad, perfil.sexo)
     tdee = calcular_tdee(bmr, perfil.dias_disponibles)
@@ -108,9 +113,9 @@ def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
     somatotipo = determinar_somatotipo(imc, perfil.objetivo)
     progreso = simular_progreso(perfil.objetivo)
 
-    # 2. Consulta al motor de inferencia (IA)
+    # 2. Consulta al motor de inferencia (Prolog / fallback Python)
     perfil_dict = {
-        **perfil.dict(),
+        **perfil.model_dump(),
         "imc": imc,
         "imc_categoria": imc_cat,
         "somatotipo": somatotipo
@@ -120,14 +125,14 @@ def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
     # 3. Añadir objetivo en ia_decision
     prolog_result["objetivo"] = perfil.objetivo
 
-    # 4. Generación rutina
+    # 4. Generación rutina (Scala JAR / fallback Python)
     scala_params = {
-        **perfil.dict(),
+        **perfil.model_dump(),
         **prolog_result
     }
     rutina = generar_rutina_scala(scala_params)
 
-    # 5. Guardar en historial — INCLUYE ia_decision_json
+    # 5. Guardar en historial
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -188,7 +193,7 @@ def get_history(user=Depends(get_current_user)):
                 "perfil":      row[2],
                 "rutina":      row[3],
                 "macros":      row[4],
-                "ia_decision": row[5],   # ← ahora incluido
+                "ia_decision": row[5],
             })
         return {"historial": history}
     finally:

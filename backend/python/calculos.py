@@ -1,6 +1,11 @@
 # backend/python/calculos.py
 
 def calcular_imc(peso_kg: float, altura_m: float) -> float:
+    """
+    Calcula el IMC. Lanza ValueError si la altura es inválida (≤ 0).
+    """
+    if altura_m <= 0:
+        raise ValueError(f"Altura inválida: {altura_m}. Debe ser mayor a 0.")
     return round(peso_kg / (altura_m ** 2), 2)
 
 def clasificar_imc(imc: float) -> str:
@@ -34,7 +39,7 @@ def calcular_tdee(bmr: float, dias_activos: int) -> float:
 
 def calcular_macros(tdee: float, objetivo: str) -> dict:
     """
-    Distribución de macros según objetivo
+    Distribución de macros según objetivo.
     """
     if objetivo == "perder_grasa":
         calorias_objetivo = round(tdee - 400)
@@ -69,24 +74,24 @@ def determinar_somatotipo(imc: float, objetivo: str) -> str:
 
 def simular_progreso(objetivo: str, semanas: int = 8) -> list:
     """
-    Simula progreso esperado durante 8 semanas con curva fisiológica realista.
-    - Las primeras semanas hay mayor cambio (agua, glucógeno).
-    - Las semanas intermedias se estabilizan.
-    - Las últimas semanas muestran adaptación/meseta.
+    Simula progreso esperado durante N semanas con curva fisiológica realista.
+    Corregido: ya no lanza IndexError si semanas > 8.
     """
-    progreso = []
-
-    # Factores de progreso semana a semana (no lineal):
-    # Semana 1 es la de mayor efecto visible; luego se suaviza
+    # Factores base para 8 semanas
     factores_grasa   = [0.9, 0.8, 0.7, 0.6, 0.55, 0.5, 0.45, 0.4]
     factores_musculo = [0.15, 0.20, 0.25, 0.28, 0.28, 0.26, 0.25, 0.22]
 
+    progreso = []
     acumulado = 0.0
+
     for i in range(semanas):
         if objetivo == "perder_grasa":
-            delta = -factores_grasa[i]
+            # Si supera los 8, usar el último factor disponible (meseta)
+            factor = factores_grasa[min(i, len(factores_grasa) - 1)]
+            delta = -factor
         elif objetivo == "ganar_musculo":
-            delta = factores_musculo[i]
+            factor = factores_musculo[min(i, len(factores_musculo) - 1)]
+            delta = factor
         else:
             delta = 0.0
 
