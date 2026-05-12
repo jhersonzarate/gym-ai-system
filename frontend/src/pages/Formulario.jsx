@@ -185,14 +185,25 @@ export default function Formulario() {
       }
 
       const { data } = await gymAPI.generateRoutine(payload)
-      localStorage.setItem('gym_resultado', JSON.stringify(data))
+      const dataEnriquecida = {
+        ...data,
+        perfil: {
+          ...data.perfil,
+          edad:   payload.edad,
+          peso:   payload.peso,
+          altura: payload.altura,
+          sexo:   payload.sexo,
+        }
+      }
+      
+      localStorage.setItem('gym_resultado', JSON.stringify(dataEnriquecida))
 
       // Guardar en historial local
       const saved = (() => {
         try { return JSON.parse(localStorage.getItem('gym_saved_results') || '[]') } catch { return [] }
       })()
       const next = [
-        { id: Date.now(), fecha: new Date().toISOString(), perfil: payload, resultado: data },
+        { id: Date.now(), fecha: new Date().toISOString(), perfil: payload, resultado: dataEnriquecida },
         ...saved,
       ].slice(0, 15)
       localStorage.setItem('gym_saved_results', JSON.stringify(next))
