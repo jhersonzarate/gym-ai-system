@@ -39,9 +39,21 @@ export default function Login() {
     setError('')
     try {
       const { data } = await authAPI.login(form)
-      localStorage.setItem('gym_token', data.token)
-      localStorage.setItem('gym_nombre', data.nombre)
-      navigate('/')
+localStorage.setItem('gym_token', data.token)
+localStorage.setItem('gym_nombre', data.nombre)
+
+try {
+  const meRes = await authAPI.me()
+  if (meRes.data.foto_perfil) {
+    localStorage.setItem('gym_foto', meRes.data.foto_perfil)
+  } else {
+    localStorage.removeItem('gym_foto')
+  }
+} catch {
+  localStorage.removeItem('gym_foto')
+}
+
+navigate('/')
     } catch (err) {
       setError(err.response?.data?.detail || 'Correo o contraseña incorrectos')
     } finally {
