@@ -6,6 +6,7 @@ const links = [
   { to: '/formulario', icon: 'tune',            label: 'Nuevo Plan'  },
   { to: '/resultados', icon: 'assignment',      label: 'Mi Plan'     },
   { to: '/historial',  icon: 'history',         label: 'Historial'   },
+  { to: '/perfil',     icon: 'manage_accounts', label: 'Mi Perfil'   },
 ]
 
 export default function Sidebar() {
@@ -17,6 +18,7 @@ export default function Sidebar() {
       display: 'flex',
       flexDirection: 'column',
       flexShrink: 0,
+      transition: 'background 0.25s, border-color 0.25s',
     }}>
       {/* Logo */}
       <div style={{
@@ -41,14 +43,12 @@ export default function Sidebar() {
             fontSize: '16px', fontWeight: 700,
             letterSpacing: '0.05em', lineHeight: 1.1,
             color: 'var(--text)',
-          }}>
-            GYMEXPERT
-          </div>
+          }}>GYMEXPERT</div>
           <div style={{ fontSize: '10px', color: 'var(--muted)', letterSpacing: '0.1em' }}>AI SYSTEM</div>
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Navegación */}
       <nav style={{ padding: '16px 12px', flex: 1 }}>
         <div style={{
           fontFamily: 'Barlow Condensed, sans-serif',
@@ -105,7 +105,7 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Info card — describe funciones sin mencionar tecnologías internas */}
+      {/* Info card */}
       <div style={{
         margin: '0 12px 16px',
         padding: '14px 16px',
@@ -118,13 +118,11 @@ export default function Sidebar() {
           fontWeight: 600, letterSpacing: '0.08em',
           fontFamily: 'Barlow Condensed, sans-serif',
           marginBottom: '8px',
-        }}>
-          SISTEMA INTELIGENTE
-        </div>
+        }}>SISTEMA INTELIGENTE</div>
         {[
-          ['Análisis de perfil',   'Motor de reglas'   ],
-          ['Rutinas dinámicas',    'Generador propio'   ],
-          ['Macros y calorías',    'Cálculo científico' ],
+          ['Análisis de perfil',  'Motor de reglas'    ],
+          ['Rutinas dinámicas',   'Generador propio'   ],
+          ['Macros y calorías',   'Cálculo científico' ],
         ].map(([role, label]) => (
           <div key={label} style={{
             display: 'flex', justifyContent: 'space-between',

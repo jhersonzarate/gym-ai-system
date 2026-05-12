@@ -1,8 +1,9 @@
 # backend/python/routes.py
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends, Header, UploadFile, File
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 import json
+import base64
 
 from db import get_connection
 from auth import hash_password, verify_password, create_token, decode_token
@@ -35,6 +36,14 @@ class PerfilRequest(BaseModel):
     objetivo: str         = Field(pattern="^(perder_grasa|ganar_musculo|mantener)$")
     dias_disponibles: int = Field(ge=2, le=7, description="Días disponibles (2–7)")
 
+class ActualizarPerfilRequest(BaseModel):
+    nombre: str = Field(min_length=2, max_length=100)
+    email: EmailStr
+
+class CambiarPasswordRequest(BaseModel):
+    password_actual: str = Field(min_length=1)
+    password_nueva: str  = Field(min_length=6, max_length=128)
+
 # ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 def get_current_user(authorization: Optional[str] = Header(None)):
@@ -46,7 +55,7 @@ def get_current_user(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
     return user
 
-# ─── ENDPOINTS ────────────────────────────────────────────────────────────────
+# ─── AUTENTICACIÓN ────────────────────────────────────────────────────────────
 
 @router.post("/register")
 def register(data: RegistroRequest):
@@ -95,6 +104,171 @@ def login(data: LoginRequest):
         cur.close()
         conn.close()
 
+# ─── PERFIL DE USUARIO ────────────────────────────────────────────────────────
+
+@router.get("/me")
+def get_me(user=Depends(get_current_user)):
+    """Retorna datos completos del usuario incluyendo foto de perfil."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "SELECT id, nombre, email, foto_perfil, created_at FROM usuarios WHERE id = %s",
+            (user["user_id"],)
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        # Contar planes del historial
+        cur.execute(
+            "SELECT COUNT(*) FROM historial WHERE usuario_id = %s",
+            (user["user_id"],)
+        )
+        total_planes = cur.fetchone()[0]
+
+        return {
+            "id":           row[0],
+            "nombre":       row[1],
+            "email":        row[2],
+            "foto_perfil":  row[3],   # base64 string o None
+            "created_at":   row[4].isoformat() if row[4] else None,
+            "total_planes": total_planes,
+        }
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.put("/profile")
+def update_profile(data: ActualizarPerfilRequest, user=Depends(get_current_user)):
+    """Actualiza nombre e email del usuario."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # Verificar que el nuevo email no esté en uso por otro usuario
+        cur.execute(
+            "SELECT id FROM usuarios WHERE email = %s AND id != %s",
+            (data.email, user["user_id"])
+        )
+        if cur.fetchone():
+            raise HTTPException(status_code=400, detail="Ese correo ya lo usa otra cuenta")
+
+        cur.execute(
+            "UPDATE usuarios SET nombre = %s, email = %s WHERE id = %s RETURNING nombre, email",
+            (data.nombre, data.email, user["user_id"])
+        )
+        updated = cur.fetchone()
+        if not updated:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        conn.commit()
+
+        # Crear nuevo token con el email actualizado
+        new_token = create_token(user["user_id"], data.email)
+        return {
+            "message": "Perfil actualizado correctamente",
+            "nombre":  updated[0],
+            "email":   updated[1],
+            "token":   new_token,
+        }
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.put("/profile/password")
+def change_password(data: CambiarPasswordRequest, user=Depends(get_current_user)):
+    """Cambia la contraseña del usuario verificando la actual."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "SELECT password_hash FROM usuarios WHERE id = %s",
+            (user["user_id"],)
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        if not verify_password(data.password_actual, row[0]):
+            raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+
+        new_hash = hash_password(data.password_nueva)
+        cur.execute(
+            "UPDATE usuarios SET password_hash = %s WHERE id = %s",
+            (new_hash, user["user_id"])
+        )
+        conn.commit()
+        return {"message": "Contraseña actualizada correctamente"}
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.post("/profile/photo")
+async def upload_photo(
+    file: UploadFile = File(...),
+    user=Depends(get_current_user)
+):
+    """
+    Sube una foto de perfil. La guarda como base64 en la base de datos.
+    Límite: 2MB. Formatos: jpg, png, webp, gif.
+    """
+    ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+    MAX_SIZE = 2 * 1024 * 1024  # 2 MB
+
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Formato no permitido. Usa JPG, PNG, WEBP o GIF."
+        )
+
+    contents = await file.read()
+
+    if len(contents) > MAX_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="La imagen es demasiado grande. Máximo 2MB."
+        )
+
+    # Convertir a base64 con el prefijo de data URI
+    b64 = base64.b64encode(contents).decode("utf-8")
+    data_uri = f"data:{file.content_type};base64,{b64}"
+
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "UPDATE usuarios SET foto_perfil = %s WHERE id = %s",
+            (data_uri, user["user_id"])
+        )
+        conn.commit()
+        return {
+            "message":     "Foto de perfil actualizada",
+            "foto_perfil": data_uri,
+        }
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.delete("/profile/photo")
+def delete_photo(user=Depends(get_current_user)):
+    """Elimina la foto de perfil, vuelve al avatar por defecto."""
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "UPDATE usuarios SET foto_perfil = NULL WHERE id = %s",
+            (user["user_id"],)
+        )
+        conn.commit()
+        return {"message": "Foto de perfil eliminada"}
+    finally:
+        cur.close()
+        conn.close()
+
+# ─── RUTINAS ─────────────────────────────────────────────────────────────────
 
 @router.post("/generate-routine")
 def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
@@ -171,6 +345,7 @@ def generate_routine(perfil: PerfilRequest, user=Depends(get_current_user)):
         "progreso_simulado": progreso
     }
 
+# ─── HISTORIAL ────────────────────────────────────────────────────────────────
 
 @router.get("/history")
 def get_history(user=Depends(get_current_user)):
@@ -233,21 +408,6 @@ def delete_all_history(user=Depends(get_current_user)):
         )
         conn.commit()
         return {"message": "Historial eliminado completamente"}
-    finally:
-        cur.close()
-        conn.close()
-
-
-@router.get("/me")
-def get_me(user=Depends(get_current_user)):
-    conn = get_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("SELECT id, nombre, email FROM usuarios WHERE id = %s", (user["user_id"],))
-        row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Usuario no encontrado")
-        return {"id": row[0], "nombre": row[1], "email": row[2]}
     finally:
         cur.close()
         conn.close()

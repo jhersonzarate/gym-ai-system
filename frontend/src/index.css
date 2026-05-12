@@ -4,27 +4,28 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  /* ── Colores base ── */
+/* ══════════════════════════════════════════════
+   MODO OSCURO (por defecto)
+══════════════════════════════════════════════ */
+:root,
+[data-theme="dark"] {
   --black:   #080A0C;
   --dark:    #0F1114;
   --card:    #13161A;
   --border:  #1E2229;
   --border2: #252B34;
 
-  /* ── Acentos ── */
   --lime:    #C6F135;
   --lime2:   #A8D520;
   --orange:  #F26522;
   --blue:    #3B82F6;
   --red:     #EF4444;
 
-  /* ── Texto ── */
   --text:    #E8EAF0;
   --muted:   #6B7280;
   --muted2:  #9CA3AF;
 
-  /* ── Aliases para compatibilidad con componentes que usan --gym-* ── */
+  /* Aliases --gym-* para compatibilidad con componentes existentes */
   --gym-black:   var(--black);
   --gym-dark:    var(--dark);
   --gym-card:    var(--card);
@@ -38,8 +39,53 @@
   --gym-text:    var(--text);
   --gym-muted:   var(--muted);
   --gym-muted2:  var(--muted2);
+
+  /* Input & botón ghost en modo oscuro */
+  --input-bg:    var(--dark);
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
 }
 
+/* ══════════════════════════════════════════════
+   MODO CLARO
+══════════════════════════════════════════════ */
+[data-theme="light"] {
+  --black:   #F0F2F5;
+  --dark:    #FFFFFF;
+  --card:    #FFFFFF;
+  --border:  #E2E6ED;
+  --border2: #CDD2DA;
+
+  --lime:    #5A8F00;
+  --lime2:   #447000;
+  --orange:  #D4520A;
+  --blue:    #2563EB;
+  --red:     #DC2626;
+
+  --text:    #111827;
+  --muted:   #6B7280;
+  --muted2:  #4B5563;
+
+  --gym-black:   var(--black);
+  --gym-dark:    var(--dark);
+  --gym-card:    var(--card);
+  --gym-border:  var(--border);
+  --gym-border2: var(--border2);
+  --gym-lime:    var(--lime);
+  --gym-lime2:   var(--lime2);
+  --gym-orange:  var(--orange);
+  --gym-blue:    var(--blue);
+  --gym-red:     var(--red);
+  --gym-text:    var(--text);
+  --gym-muted:   var(--muted);
+  --gym-muted2:  var(--muted2);
+
+  --input-bg:    #F9FAFB;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+/* ══════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════ */
 html { scroll-behavior: smooth; }
 
 body {
@@ -49,11 +95,12 @@ body {
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
-.font-display  { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
-.font-cond     { font-family: 'Barlow Condensed', sans-serif; }
-.font-condensed{ font-family: 'Barlow Condensed', sans-serif; }
+.font-display   { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
+.font-cond      { font-family: 'Barlow Condensed', sans-serif; }
+.font-condensed { font-family: 'Barlow Condensed', sans-serif; }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--dark); }
@@ -63,10 +110,12 @@ body {
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
-/* ── Inputs ── */
+/* ══════════════════════════════════════════════
+   INPUTS
+══════════════════════════════════════════════ */
 .gym-input {
   width: 100%;
-  background: var(--dark);
+  background: var(--input-bg);
   border: 1.5px solid var(--border2);
   border-radius: 8px;
   padding: 12px 16px;
@@ -74,19 +123,34 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   font-family: 'Barlow', sans-serif;
   font-size: 15px;
   outline: none;
-  transition: border-color 0.18s, box-shadow 0.18s;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.25s;
 }
 .gym-input:focus {
   border-color: var(--lime);
   box-shadow: 0 0 0 3px rgba(198,241,53,0.09);
+}
+[data-theme="light"] .gym-input:focus {
+  box-shadow: 0 0 0 3px rgba(90,143,0,0.12);
 }
 .gym-input::placeholder { color: var(--muted); }
 .gym-input.error {
   border-color: var(--red);
   box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
 }
+select.gym-input {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+select.gym-input option { background: var(--dark); color: var(--text); }
 
-/* ── Botones ── */
+/* ══════════════════════════════════════════════
+   BOTONES
+══════════════════════════════════════════════ */
 .btn-primary {
   background: var(--lime);
   color: #080A0C;
@@ -125,7 +189,9 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 .btn-ghost:hover { border-color: var(--lime); color: var(--lime); }
 
-/* ── Labels ── */
+/* ══════════════════════════════════════════════
+   COMPONENTES
+══════════════════════════════════════════════ */
 .label-tag {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 11px;
@@ -135,37 +201,13 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   color: var(--muted);
 }
 
-/* ── Cards ── */
 .gym-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
+  transition: background 0.25s, border-color 0.25s;
 }
 
-/* ── Animaciones ── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.5; }
-}
-
-.animate-up    { animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
-.animate-fade-up { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
-.animate-spin  { animation: spin 0.8s linear infinite; }
-.s1 { animation-delay: 0.05s; }
-.s2 { animation-delay: 0.10s; }
-.s3 { animation-delay: 0.15s; }
-.s4 { animation-delay: 0.20s; }
-
-/* ── Mensajes de error de validación personalizados ── */
 .field-error {
   font-size: 12px;
   color: #FCA5A5;
@@ -174,18 +216,50 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   align-items: center;
   gap: 4px;
 }
+[data-theme="light"] .field-error { color: #B91C1C; }
 
-/* ── Select styled ── */
-select.gym-input {
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
+/* ══════════════════════════════════════════════
+   ANIMACIONES
+══════════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.animate-up      { animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-fade-up { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-spin    { animation: spin 0.8s linear infinite; }
+.s1 { animation-delay: 0.05s; }
+.s2 { animation-delay: 0.10s; }
+.s3 { animation-delay: 0.15s; }
+.s4 { animation-delay: 0.20s; }
+
+/* Toggle de tema */
+.theme-toggle {
+  width: 44px;
+  height: 24px;
+  background: var(--border2);
+  border-radius: 12px;
+  position: relative;
   cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  flex-shrink: 0;
 }
-select.gym-input option {
-  background: var(--dark);
-  color: var(--text);
+.theme-toggle.active { background: var(--lime); }
+.theme-toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
 }
+.theme-toggle.active::after { transform: translateX(20px); }
+[data-theme="light"] .theme-toggle.active::after { background: #080A0C; }

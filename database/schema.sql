@@ -1,10 +1,12 @@
 -- database/schema.sql
+-- VERSION ACTUALIZADA - incluye foto_perfil en usuarios
 
 CREATE TABLE IF NOT EXISTS usuarios (
     id            SERIAL PRIMARY KEY,
     nombre        VARCHAR(100) NOT NULL,
     email         VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    foto_perfil   TEXT DEFAULT NULL,       -- imagen en base64 (data:image/...;base64,...)
     created_at    TIMESTAMP DEFAULT NOW()
 );
 
@@ -50,14 +52,24 @@ CREATE TABLE IF NOT EXISTS historial (
 CREATE INDEX IF NOT EXISTS idx_historial_usuario ON historial(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_rutinas_usuario   ON rutinas(usuario_id);
 
--- Migración segura: agregar columna si no existe (para bases de datos ya creadas)
+-- Migración segura: agregar columnas si no existen (para bases de datos ya creadas)
 DO $$
 BEGIN
+    -- ia_decision_json en historial
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_name='historial' AND column_name='ia_decision_json'
     ) THEN
         ALTER TABLE historial ADD COLUMN ia_decision_json JSONB;
+    END IF;
+
+    -- foto_perfil en usuarios
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='usuarios' AND column_name='foto_perfil'
+    ) THEN
+        ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT DEFAULT NULL;
+        RAISE NOTICE 'Columna foto_perfil agregada a usuarios.';
     END IF;
 END
 $$;
